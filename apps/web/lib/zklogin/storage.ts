@@ -9,6 +9,7 @@ export interface PendingZkLogin {
   randomness: string;
   network: string;
   redirectUri: string;
+  postLoginRedirect?: string;
   createdAt: number;
   ephemeralPublicKey: string;
   ephemeralSecretKey: string;

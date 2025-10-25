@@ -26,7 +26,7 @@ export default function HomePage() {
                   <path d="M12.1 20.7a1 1 0 0 1-.2 0c-.4-.1-.7-.3-1-.5C6.1 16.2 3 12.2 3 8.7 3 6 5 4 7.6 4c1.4 0 2.7.6 3.6 1.7C12.1 4.6 13.4 4 14.8 4 17.4 4 19.4 6 19.4 8.7c0 3.5-3.1 7.5-7.9 11.5-.3.3-.6.5-1 .5h-.4z" />
                 </svg>
               </span>
-              <span className="text-xl font-semibold tracking-tight">Prooflirt</span>
+              <span className="text-xl font-semibold tracking-tight">ProoFlirt</span>
             </div>
 
             <div className="flex flex-col gap-4 text-white">

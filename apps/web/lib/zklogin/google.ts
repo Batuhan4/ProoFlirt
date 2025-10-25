@@ -16,7 +16,10 @@ import { clearEphemeralSession, defaultNetwork, persistPendingLogin } from "./st
 interface PrepareOptions {
   redirectUri?: string;
   network?: string;
+  postLoginRedirect?: string;
 }
+
+const DEFAULT_POST_LOGIN_REDIRECT = "/onboarding/create-profile";
 
 function ensureEnv(name: string, value: string | undefined): string {
   if (!value) {
@@ -45,7 +48,8 @@ function randomState() {
 
 export async function prepareGoogleZkLogin({
   redirectUri,
-  network
+  network,
+  postLoginRedirect
 }: PrepareOptions = {}): Promise<string> {
   const clientId = ensureEnv(
     "NEXT_PUBLIC_GOOGLE_CLIENT_ID",
@@ -54,6 +58,7 @@ export async function prepareGoogleZkLogin({
 
   const resolvedRedirectUri = getRedirectUri(redirectUri);
   const resolvedNetwork = network || defaultNetwork();
+  const resolvedPostLoginRedirect = postLoginRedirect || DEFAULT_POST_LOGIN_REDIRECT;
 
   const suiClient = new SuiClient({ url: getSuiRpcUrl(resolvedNetwork) });
   const { epoch } = await suiClient.getLatestSuiSystemState();
@@ -75,6 +80,7 @@ export async function prepareGoogleZkLogin({
     randomness,
     network: resolvedNetwork,
     redirectUri: resolvedRedirectUri,
+    postLoginRedirect: resolvedPostLoginRedirect,
     createdAt: Date.now(),
     ephemeralPublicKey: ephemeralKeyPair.getPublicKey().toBase64(),
     ephemeralSecretKey: toBase64(parsedSecret.secretKey)

@@ -15,5 +15,10 @@ export const GOOGLE_OPENID_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/a
 
 export const DEFAULT_REDIRECT_PATH = "/zk/callback";
 
+const DEFAULT_PROVER_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://prover.mystenlabs.com/v1"
+    : "http://localhost:5001/v1";
+
 export const PROVER_SERVICE_URL =
-  process.env.NEXT_PUBLIC_ZK_PROVER_URL || "https://prover.mystenlabs.com/v1";
+  process.env.NEXT_PUBLIC_ZK_PROVER_URL || DEFAULT_PROVER_URL;
