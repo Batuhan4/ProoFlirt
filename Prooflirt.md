@@ -70,6 +70,14 @@ A privacy-preserving, decentralized dating protocol built on the **Sui** network
 
    * **Penalty mechanism:** token deductions for ghosting or misconduct.
 
+10. **Mobile PWA Experience**
+
+   * Mobile-first responsive UI optimized for phones as the primary device.
+
+   * Installable Progressive Web App with offline profile caching and push notifications.
+
+   * Service worker manages background sync for messages and meetup updates.
+
 ---
 
 ### **Advantages**
@@ -82,3 +90,4 @@ A privacy-preserving, decentralized dating protocol built on the **Sui** network
 
 * High throughput and low latency using Sui’s parallel execution.
 
+* Mobile-friendly PWA with offline-first UX and push-enabled engagement.

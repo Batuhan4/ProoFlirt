@@ -37,5 +37,5 @@
 - Do not commit secrets, proving keys, or private keys. Use `.env.local` and Vercel env vars.
 - Media uploads: hash client-side; validate mime/size in API proxy; store on Walrus.
 - Network config: default to Sui `testnet`; set `NEXT_PUBLIC_SUI_NETWORK`.
+- ZK Login env: configure `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, optional `NEXT_PUBLIC_ZK_PROVER_URL`, and server-side `ZK_SALT_SECRET` (32+ byte seed).
 - Large ZK artifacts: store externally (releases/storage), reference via URL and checksum.
-

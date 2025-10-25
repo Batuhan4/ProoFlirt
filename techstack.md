@@ -17,6 +17,12 @@ This stack aligns with ProoFlirt’s goals: privacy-first, on-chain identity on 
 - Routing/Data: Next.js Server Components for data boundaries and progressive enhancement
 - Internationalization: next-intl (optional)
 
+## Mobile PWA & UX
+- Mobile-first responsive design system using Tailwind breakpoints and Radix primitives.
+- PWA support via `next-pwa` (service worker, manifest, offline shell, install prompts).
+- Cache strategy: static assets precached, dynamic data cached with stale-while-revalidate; background sync for messages when online.
+- Device features: Web Push (meetup reminders, trust events) and add-to-home-screen guidance.
+
 ## Web3 (Sui) Integration
 - SDK: @mysten/sui.js (queries, transactions, subscriptions)
 - Wallets: @mysten/wallet-kit (standardized wallet connectors)
@@ -88,5 +94,4 @@ This stack aligns with ProoFlirt’s goals: privacy-first, on-chain identity on 
 - Runtime selection per route (`runtime: "nodejs"` where Node APIs are needed)
 
 ## Summary
-- We deploy on Vercel with a Next.js + TypeScript frontend, Sui integration via @mysten packages, ZK via Circom/snarkjs in the client, decentralized messaging via Waku with E2EE, Walrus for media, and a minimal serverless layer for upload proxying, moderation hooks, and indexing. This maximizes privacy, keeps secrets client-side, leverages on-chain verification, and avoids reliance on long-lived backend infrastructure.
-
+- We deploy on Vercel with a Next.js + TypeScript frontend, Sui integration via @mysten packages, ZK via Circom/snarkjs in the client, decentralized messaging via Waku with E2EE, Walrus for media, mobile-first PWA support, and a minimal serverless layer for upload proxying, moderation hooks, and indexing. This maximizes privacy, keeps secrets client-side, leverages on-chain verification, and avoids reliance on long-lived backend infrastructure while delivering an installable mobile experience.

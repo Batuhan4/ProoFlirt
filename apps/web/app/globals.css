@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  min-height: 100%;
+  background-color: #0b0d1c;
+  color: white;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

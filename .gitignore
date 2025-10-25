@@ -1,21 +1,19 @@
 # Dependencies
-/node_modules
-/.pnp
-.pnp.js
+node_modules/
 
-# Build artifacts
-/dist
-/build
-/out
+# Build outputs
+.next/
+out/
+dist/
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Environment variables
-.env
+# Env files
+.env*
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+!.env.example
+
+# Misc
+.DS_Store
+pnpm-lock.yaml
+
+# Extra
+zklogin.md
