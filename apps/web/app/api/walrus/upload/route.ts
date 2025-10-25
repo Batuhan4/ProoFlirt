@@ -67,7 +67,9 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": file.type || "application/octet-stream"
       },
-      body: file.stream()
+      body: file.stream(),
+      // Node's undici fetch requires `duplex` when streaming a body.
+      duplex: "half"
     });
 
     if (!upstream.ok) {
