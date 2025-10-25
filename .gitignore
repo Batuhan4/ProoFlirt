@@ -5,6 +5,7 @@ node_modules/
 .next/
 out/
 dist/
+contracts/build/
 
 # Env files
 .env*
@@ -17,3 +18,4 @@ pnpm-lock.yaml
 
 # Extra
 zklogin.md
+Sui-Move-Book.md
