@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { KeyboardEvent } from "react";
 
 const MESSAGES_ENABLED = process.env.NEXT_PUBLIC_MESSAGES_ENABLE === "true";
@@ -228,10 +228,26 @@ export default function MessagesPage() {
     () => INITIAL_THREADS[0]?.id ?? ""
   );
   const [draftMessage, setDraftMessage] = useState("");
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showMobileThreadList, setShowMobileThreadList] = useState(true);
 
   const activeThread =
     threads.find((thread) => thread.id === activeConversationId) ?? threads[0] ?? null;
   const canSend = draftMessage.trim().length > 0;
+
+  useEffect(() => {
+    const updateViewport = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobileView(mobile);
+      setShowMobileThreadList((previous) => (mobile ? previous : false));
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => {
+      window.removeEventListener("resize", updateViewport);
+    };
+  }, []);
 
   const handleSelectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
@@ -241,6 +257,9 @@ export default function MessagesPage() {
         thread.id === conversationId ? { ...thread, unreadCount: undefined } : thread
       )
     );
+    if (isMobileView) {
+      setShowMobileThreadList(false);
+    }
   };
 
   const handleSend = () => {
@@ -411,7 +430,12 @@ export default function MessagesPage() {
           </section>
 
           <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
-            <aside className="flex flex-col gap-4 rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-4 sm:p-6">
+            <aside
+              className={clsx(
+                "flex flex-col gap-4 rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-4 sm:p-6",
+                isMobileView && !showMobileThreadList && "hidden"
+              )}
+            >
               <div className="flex items-center justify-between text-sm text-[var(--color-text-secondary)]">
                 <p className="font-heading font-semibold tracking-tight text-[var(--color-text-primary)]">Threads</p>
                 <span className="text-xs text-[var(--color-text-muted)]">Proof-sorted</span>
@@ -461,8 +485,31 @@ export default function MessagesPage() {
               </div>
             </aside>
 
-            <article className="flex flex-col gap-4 rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-4 sm:p-6">
+            <article
+              className={clsx(
+                "flex flex-col gap-4 rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-4 sm:p-6",
+                isMobileView && showMobileThreadList && "hidden"
+              )}
+            >
               <header className="flex flex-wrap items-center gap-3">
+                {isMobileView ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileThreadList(true)}
+                    className="flex items-center gap-1 rounded-full border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] transition hover:border-[var(--color-border)] hover:text-[var(--color-text-primary)]"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m15 7-5 5 5 5" />
+                    </svg>
+                    Threads
+                  </button>
+                ) : null}
                 <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-[var(--color-border-soft)]">
                   <Image
                     src="https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=300&q=80"
