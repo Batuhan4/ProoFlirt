@@ -298,7 +298,7 @@ export default function CreateProfilePage() {
       setPhase("success");
 
       redirectTimerRef.current = setTimeout(() => {
-        router.replace("/");
+        router.replace("/discover");
       }, 2200);
     } catch (error) {
       console.error("Create profile failed", error);

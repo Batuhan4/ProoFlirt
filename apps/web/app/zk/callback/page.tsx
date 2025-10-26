@@ -307,7 +307,7 @@ export default function ZkCallbackPage() {
           <>
             <h1 className="text-xl font-semibold">You&apos;re in! 🎉</h1>
             <p className="mt-3 text-sm text-white/70">
-              Address <span className="font-mono text-white">{result.address}</span> on
+              Address <span className="font-mono text-white break-all">{result.address}</span> on
               Sui {result.network} is now linked to your Google account.
             </p>
             <p className="mt-3 text-xs text-white/60">
