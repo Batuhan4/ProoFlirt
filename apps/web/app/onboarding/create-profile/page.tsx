@@ -8,6 +8,12 @@ import {
   buildCreateProfileTransaction,
   type MediaRecordPayload
 } from "@/lib/profile-contract";
+import {
+  GENDER_OPTIONS,
+  MATCH_PREFERENCE_OPTIONS,
+  type GenderValue,
+  type MatchPreferenceValue
+} from "@/lib/profile-preferences";
 import { executeZkLoginTransaction } from "@/lib/zklogin/execute";
 import { loadSession, type ZkLoginSession } from "@/lib/zklogin/storage";
 import { saveCachedProfile } from "@/lib/profile-cache";
@@ -147,6 +153,8 @@ export default function CreateProfilePage() {
   const [session, setSession] = useState<ZkLoginSession | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [gender, setGender] = useState<GenderValue | "">("");
+  const [preferredGender, setPreferredGender] = useState<MatchPreferenceValue | "">("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     () => INTEREST_OPTIONS.filter((option) => option.defaultSelected).map((option) => option.label)
   );
@@ -192,9 +200,20 @@ export default function CreateProfilePage() {
     score += Math.min(20, galleryMedia.length * 4);
     if (displayName.trim()) score += 15;
     if (bio.trim()) score += 10;
+    if (gender) score += 5;
+    if (preferredGender) score += 5;
     score += Math.min(25, selectedInterests.length * 5);
     return `${Math.min(score, 95)}%`;
-  }, [bio, displayName, galleryMedia.length, primaryMedia, selectedInterests.length, showSuccessState]);
+  }, [
+    bio,
+    displayName,
+    galleryMedia.length,
+    gender,
+    preferredGender,
+    primaryMedia,
+    selectedInterests.length,
+    showSuccessState
+  ]);
 
   const phaseMessage = useMemo(() => {
     if (phase === "uploading") {
@@ -306,6 +325,14 @@ export default function CreateProfilePage() {
     });
   };
 
+  const toggleGender = (value: GenderValue) => {
+    setGender((prev) => (prev === value ? "" : value));
+  };
+
+  const togglePreferredGender = (value: MatchPreferenceValue) => {
+    setPreferredGender((prev) => (prev === value ? "" : value));
+  };
+
   const uploadMedia = useCallback(async (mediaList: LocalMedia[]): Promise<PreparedMedia[]> => {
     if (mediaList.length === 0) return [];
     const publisherUrl = resolveWalrusPublisherUrl();
@@ -413,6 +440,8 @@ export default function CreateProfilePage() {
         sender: sessionData.address,
         displayName: trimmedDisplayName,
         bio: trimmedBio,
+        gender,
+        preferredGender,
         interests: selectedInterests,
         identityHash,
         zkCommitment,
@@ -442,6 +471,8 @@ export default function CreateProfilePage() {
         displayName: trimmedDisplayName,
         handle: deriveHandle(trimmedDisplayName, sessionData.address),
         bio: trimmedBio,
+        gender,
+        preferredGender,
         interests: selectedInterests,
         primary: cachedPrimary,
         gallery: cachedGallery,
@@ -465,7 +496,7 @@ export default function CreateProfilePage() {
       setRecentWalrusLinks(serializedMedia.map((item) => item.walrusLink));
       setTxDigest(digest);
     },
-    [bio, displayName, selectedInterests, session, uploadMedia]
+    [bio, displayName, gender, preferredGender, selectedInterests, session, uploadMedia]
   );
 
   const handleContinue = async () => {
@@ -483,6 +514,14 @@ export default function CreateProfilePage() {
     }
     if (!displayName.trim()) {
       setErrorMessage("Add the name you want to show on-chain.");
+      return;
+    }
+    if (!gender) {
+      setErrorMessage("Select the gender you want to display.");
+      return;
+    }
+    if (!preferredGender) {
+      setErrorMessage("Select the gender preference for matches.");
       return;
     }
 
@@ -516,7 +555,8 @@ export default function CreateProfilePage() {
           ? "Uploading to Walrus…"
           : "Create profile";
 
-  const disableSubmit = !session || !primaryMedia || !displayName.trim() || isSubmitting;
+  const disableSubmit =
+    !session || !primaryMedia || !displayName.trim() || !gender || !preferredGender || isSubmitting;
 
   return (
     <main className="relative min-h-screen bg-gradient-to-b from-[var(--color-bg-start)] via-[var(--color-bg-mid)] to-[var(--color-bg-end)] text-[var(--color-text-primary)]">
@@ -886,6 +926,62 @@ export default function CreateProfilePage() {
                     className="resize-none rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30"
                   />
                 </label>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-lg font-heading font-semibold text-[var(--color-text-primary)]">Gender identity</h3>
+                <p className="text-sm text-[var(--color-text-secondary)]">Pick the label that fits best. You can update this later.</p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {GENDER_OPTIONS.map((option) => {
+                  const isSelected = gender === option.value;
+                  const baseClasses =
+                    "rounded-full px-5 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40";
+                  const variantClasses = isSelected
+                    ? "bg-[var(--color-accent)] text-[var(--color-text-primary)] shadow-[var(--shadow-accent)] hover:bg-[var(--color-accent-strong)]"
+                    : "bg-[var(--color-surface-soft)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]";
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => toggleGender(option.value)}
+                      className={`${baseClasses} ${variantClasses}`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-lg font-heading font-semibold text-[var(--color-text-primary)]">Looking for</h3>
+                <p className="text-sm text-[var(--color-text-secondary)]">Tell us who you want to match with.</p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {MATCH_PREFERENCE_OPTIONS.map((option) => {
+                  const isSelected = preferredGender === option.value;
+                  const baseClasses =
+                    "rounded-full px-5 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40";
+                  const variantClasses = isSelected
+                    ? "bg-[var(--color-accent)] text-[var(--color-text-primary)] shadow-[var(--shadow-accent)] hover:bg-[var(--color-accent-strong)]"
+                    : "bg-[var(--color-surface-soft)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]";
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => togglePreferredGender(option.value)}
+                      className={`${baseClasses} ${variantClasses}`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

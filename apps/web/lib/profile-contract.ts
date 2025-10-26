@@ -10,6 +10,8 @@ export interface CreateProfilePayload {
   sender: string;
   displayName: string;
   bio: string;
+  gender: string;
+  preferredGender: string;
   interests: string[];
   identityHash: Uint8Array;
   zkCommitment: Uint8Array;
@@ -72,6 +74,8 @@ export function buildCreateProfileTransaction(payload: CreateProfilePayload) {
       registry,
       tx.pure.string(payload.displayName),
       tx.pure.string(payload.bio),
+      tx.pure.string(payload.gender),
+      tx.pure.string(payload.preferredGender),
       tx.pure.vector("string", payload.interests),
       tx.pure.vector("u8", Array.from(payload.identityHash)),
       tx.pure.vector("u8", Array.from(payload.zkCommitment)),

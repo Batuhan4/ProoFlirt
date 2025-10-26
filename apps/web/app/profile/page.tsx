@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 
 import { loadCachedProfile, type CachedProfilePayload } from "@/lib/profile-cache";
 import { computeProfileScores } from "@/lib/profile-scoring";
+import { resolveGenderLabel, resolveMatchPreferenceLabel } from "@/lib/profile-preferences";
 import { normalizeWalrusLink } from "@/lib/walrus";
 
 type ProfileStat = {
@@ -271,6 +272,21 @@ export default function ProfilePage() {
     };
   }, [cachedProfile, profileScores]);
 
+  const genderBadge = cachedProfile
+    ? resolveGenderLabel(cachedProfile.gender) ?? profileData.pronouns
+    : profileData.pronouns;
+  const matchPreferenceBadge = cachedProfile
+    ? resolveMatchPreferenceLabel(cachedProfile.preferredGender)
+    : null;
+  const identityBadges = [
+    genderBadge,
+    profileData.location,
+    profileData.lastOnline
+  ].filter(Boolean) as string[];
+  if (matchPreferenceBadge) {
+    identityBadges.push(`Looking for ${matchPreferenceBadge}`);
+  }
+
   const stats = useMemo<ProfileStat[]>(() => {
     if (!cachedProfile) {
       return [
@@ -428,21 +444,27 @@ export default function ProfilePage() {
 
             <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
-                <div className="h-24 w-24 overflow-hidden rounded-3xl border border-[var(--color-border-soft)] shadow-lg sm:h-28 sm:w-28">
-                  <img src={heroImageSrc} alt={mediaGallery[0]?.alt} className="h-full w-full object-cover" />
+                <div className="relative h-24 w-24 overflow-hidden rounded-3xl border border-[var(--color-border-soft)] shadow-lg sm:h-28 sm:w-28">
+                  <Image
+                    src={heroImageSrc}
+                    alt={mediaGallery[0]?.alt ?? "Profile hero media"}
+                    fill
+                    sizes="(min-width: 640px) 112px, 96px"
+                    className="object-cover"
+                    unoptimized
+                  />
                 </div>
 
                 <div className="flex max-w-lg flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]">
-                    <span className="rounded-full border border-[var(--color-border-soft)] px-3 py-1 tracking-tight">
-                      {profileData.pronouns}
-                    </span>
-                    <span className="rounded-full border border-[var(--color-border-soft)] px-3 py-1 tracking-tight">
-                      {profileData.location}
-                    </span>
-                    <span className="rounded-full border border-[var(--color-border-soft)] px-3 py-1 tracking-tight">
-                      {profileData.lastOnline}
-                    </span>
+                    {identityBadges.map((badge, index) => (
+                      <span
+                        key={`${badge}-${index}`}
+                        className="rounded-full border border-[var(--color-border-soft)] px-3 py-1 tracking-tight"
+                      >
+                        {badge}
+                      </span>
+                    ))}
                   </div>
                   <div>
                     <h1 className="text-2xl font-heading font-semibold tracking-tight text-[var(--color-text-primary)] sm:text-3xl">
@@ -635,11 +657,16 @@ export default function ProfilePage() {
                 const walrusHref = normalizeWalrusLink(item.walrusLink);
                 return (
                   <figure key={item.id} className="group overflow-hidden rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)]">
-                    <img
-                      src={mediaSrc}
-                      alt={item.alt}
-                      className="h-48 w-full object-cover transition duration-300 group-hover:scale-105"
-                    />
+                    <div className="relative h-48 w-full">
+                      <Image
+                        src={mediaSrc}
+                        alt={item.alt}
+                        fill
+                        sizes="(min-width: 640px) 33vw, 100vw"
+                        className="object-cover transition duration-300 group-hover:scale-105"
+                        unoptimized
+                      />
+                    </div>
                     <figcaption className="flex items-center justify-between gap-2 bg-[var(--color-surface)] px-3 py-2 text-xs text-[var(--color-text-secondary)]">
                       <span className="truncate">{item.alt}</span>
                       {walrusHref ? (

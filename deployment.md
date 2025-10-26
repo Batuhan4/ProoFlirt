@@ -1,30 +1,31 @@
 ## Prooflirt Profile Deployment (Sui Testnet)
 
-- **Published at:** 2025-10-25 22:59:59 UTC
-- **Transaction digest:** `8f7PAgEVKV4fBUm9scR7Cy59jr3V3Y3vJDzAG8cnpU5C`
+- **Published at:** 2025-10-26 04:37:59 UTC
+- **Transaction digest:** `9xUvyohX6YK4HZEYaSXvo2JG9bDncysgVfVNQFs6Y1UH`
 
 ### Package
 
 | Item | Value |
 |------|-------|
-| Package ID | `0x06f5539f60dde5021ba7ca0ea037de21ba4097d25f43192c845b3863f515d673` |
+| Package ID | `0x3fb2c7991082be8ced20e0b1cf180d013a802b1a6e256b759616872fe4ebc9a3` |
 | Version | `1` |
 | Modules | `profile` |
-| Upgrade Cap | `0xa8ae326e78ed557e9e113a5c6381c37707d8724c91cdbaccbbcbd42a325ceb0b` |
+| Upgrade Cap | `0xa102749d4e82776cfed6f548d6486b5d5720cff6eca063cfc7aebfa17aaa54e7` |
 
 ### Created Objects
 
 | Object | ID | Version | Notes |
 |--------|----|---------|-------|
-| `ProfileRegistry` | `0x6f5539f60dde5021ba7ca0ea037de21ba4097d25f43192c845b3863f515d673` | `627862126` | Shared object referenced by frontend |
-| `AdminCap` | `0xf99610723194fdb8e2c4fa04f7a71dac39c850ffa5651c7dc4c1da5861d950bd` | `627862126` | Held by deployer for trust-score updates |
+| `ProfileRegistry` | `0x4f6aeae74f1292551546694187eacbeb3e5de00751e2f6ab902016b08e82abe5` | `627862129` | Shared object referenced by frontend |
+| `AdminCap` | `0xb23aac5a4b1df1d0a01acffc42ed171be4fcffa0cba5a0aa04aac2e392b7ae15` | `627862129` | Held by deployer for trust-score updates |
+| `UpgradeCap` | `0xa102749d4e82776cfed6f548d6486b5d5720cff6eca063cfc7aebfa17aaa54e7` | `627862129` | Required for future package upgrades |
 
 ### Environment Snippet
 
 ```env
-NEXT_PUBLIC_PROFILE_PACKAGE=0x06f5539f60dde5021ba7ca0ea037de21ba4097d25f43192c845b3863f515d673
-NEXT_PUBLIC_PROFILE_REGISTRY_ID=0x6f5539f60dde5021ba7ca0ea037de21ba4097d25f43192c845b3863f515d673
-NEXT_PUBLIC_PROFILE_REGISTRY_VERSION=627862126
+NEXT_PUBLIC_PROFILE_PACKAGE=0x3fb2c7991082be8ced20e0b1cf180d013a802b1a6e256b759616872fe4ebc9a3
+NEXT_PUBLIC_PROFILE_REGISTRY_ID=0x4f6aeae74f1292551546694187eacbeb3e5de00751e2f6ab902016b08e82abe5
+NEXT_PUBLIC_PROFILE_REGISTRY_VERSION=627862129
 NEXT_PUBLIC_WALRUS_PUBLISHER_URL=https://publisher.walrus-testnet.walrus.space
 NEXT_PUBLIC_WALRUS_AGGREGATOR_URL=https://aggregator.walrus-testnet.walrus.space
 NEXT_PUBLIC_WALRUS_DEFAULT_EPOCHS=5

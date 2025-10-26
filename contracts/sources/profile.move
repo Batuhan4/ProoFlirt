@@ -18,6 +18,8 @@ module prooflirt::profile {
     const E_TOO_MANY_MEDIA_ITEMS: u64 = 4;
     const E_MEDIA_LINK_REQUIRED: u64 = 5;
     const E_ADMIN_ONLY: u64 = 6;
+    const E_EMPTY_GENDER: u64 = 7;
+    const E_EMPTY_GENDER_PREF: u64 = 8;
 
     const UPDATE_PERSONA: u8 = 1;
     const UPDATE_MEDIA: u8 = 2;
@@ -38,6 +40,8 @@ module prooflirt::profile {
         owner: address,
         display_name: String,
         bio: String,
+        gender: String,
+        preferred_gender: String,
         interests: vector<String>,
         identity_hash: vector<u8>,
         zk_identity_commitment: vector<u8>,
@@ -126,6 +130,8 @@ module prooflirt::profile {
         registry: &mut ProfileRegistry,
         display_name: String,
         bio: String,
+        gender: String,
+        preferred_gender: String,
         interests: vector<String>,
         identity_hash: vector<u8>,
         zk_identity_commitment: vector<u8>,
@@ -140,6 +146,8 @@ module prooflirt::profile {
             registry,
             display_name,
             bio,
+            gender,
+            preferred_gender,
             interests,
             identity_hash,
             zk_identity_commitment,
@@ -196,11 +204,23 @@ module prooflirt::profile {
         profile: &mut Profile,
         display_name: String,
         bio: String,
+        gender: String,
+        preferred_gender: String,
         interests: vector<String>,
         ctx: &mut sui::tx_context::TxContext,
     ) {
         let sender = sui::tx_context::sender(ctx);
-        update_persona_internal(profile, display_name, bio, interests, ctx, sender, true);
+        update_persona_internal(
+            profile,
+            display_name,
+            bio,
+            gender,
+            preferred_gender,
+            interests,
+            ctx,
+            sender,
+            true,
+        );
     }
 
     /// Update the caller's identity commitments without touching presentation data.
@@ -296,6 +316,14 @@ module prooflirt::profile {
         }
     }
 
+    fun ensure_valid_gender_fields(gender: &String, preferred_gender: &String) {
+        assert!(std::string::length(gender) > 0, E_EMPTY_GENDER);
+        assert!(
+            std::string::length(preferred_gender) > 0,
+            E_EMPTY_GENDER_PREF
+        );
+    }
+
     fun ensure_valid_media(primary: &MediaRecord, gallery: &vector<MediaRecord>) {
         assert!(std::string::length(&primary.walrus_link) > 0, E_MEDIA_LINK_REQUIRED);
         let mut i = 0;
@@ -312,6 +340,8 @@ module prooflirt::profile {
         registry: &mut ProfileRegistry,
         display_name: String,
         bio: String,
+        gender: String,
+        preferred_gender: String,
         interests: vector<String>,
         identity_hash: vector<u8>,
         zk_identity_commitment: vector<u8>,
@@ -328,6 +358,7 @@ module prooflirt::profile {
             E_PROFILE_EXISTS
         );
         ensure_valid_interests(&interests);
+        ensure_valid_gender_fields(&gender, &preferred_gender);
         ensure_valid_media(&primary_media, &gallery);
 
         let profile = Profile {
@@ -335,6 +366,8 @@ module prooflirt::profile {
             owner: sender,
             display_name,
             bio,
+            gender,
+            preferred_gender,
             interests,
             identity_hash,
             zk_identity_commitment,
@@ -363,6 +396,8 @@ module prooflirt::profile {
         profile: &mut Profile,
         display_name: String,
         bio: String,
+        gender: String,
+        preferred_gender: String,
         interests: vector<String>,
         ctx: &mut sui::tx_context::TxContext,
         sender: address,
@@ -370,9 +405,12 @@ module prooflirt::profile {
     ) {
         assert_profile_owner(profile, sender);
         ensure_valid_interests(&interests);
+        ensure_valid_gender_fields(&gender, &preferred_gender);
 
         profile.display_name = display_name;
         profile.bio = bio;
+        profile.gender = gender;
+        profile.preferred_gender = preferred_gender;
         profile.interests = interests;
 
         let version = bump_version(profile, ctx);
@@ -467,6 +505,8 @@ module prooflirt::profile {
         registry: &mut ProfileRegistry,
         display_name: String,
         bio: String,
+        gender: String,
+        preferred_gender: String,
         interests: vector<String>,
         identity_hash: vector<u8>,
         zk_identity_commitment: vector<u8>,
@@ -481,6 +521,8 @@ module prooflirt::profile {
             registry,
             display_name,
             bio,
+            gender,
+            preferred_gender,
             interests,
             identity_hash,
             zk_identity_commitment,
@@ -499,11 +541,23 @@ module prooflirt::profile {
         profile: &mut Profile,
         display_name: String,
         bio: String,
+        gender: String,
+        preferred_gender: String,
         interests: vector<String>,
         ctx: &mut sui::tx_context::TxContext,
         sender: address,
     ) {
-        update_persona_internal(profile, display_name, bio, interests, ctx, sender, false);
+        update_persona_internal(
+            profile,
+            display_name,
+            bio,
+            gender,
+            preferred_gender,
+            interests,
+            ctx,
+            sender,
+            false,
+        );
     }
 
     #[test_only]
@@ -578,6 +632,8 @@ module prooflirt::profile {
             owner: _,
             display_name: _,
             bio: _,
+            gender: _,
+            preferred_gender: _,
             interests: _,
             identity_hash: _,
             zk_identity_commitment: _,

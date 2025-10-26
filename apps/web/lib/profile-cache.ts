@@ -22,6 +22,8 @@ export interface CachedProfilePayload {
   displayName: string;
   handle?: string | null;
   bio: string;
+  gender?: string | null;
+  preferredGender?: string | null;
   interests: string[];
   primary?: CachedMediaItem | null;
   gallery?: CachedMediaItem[];

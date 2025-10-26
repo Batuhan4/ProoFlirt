@@ -313,11 +313,14 @@ export default function MessagesPage() {
 
             <article className="flex flex-col gap-4 rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-4 sm:p-6">
               <header className="flex flex-wrap items-center gap-3">
-                <div className="h-12 w-12 overflow-hidden rounded-2xl border border-[var(--color-border-soft)]">
-                  <img
+                <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-[var(--color-border-soft)]">
+                  <Image
                     src="https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=300&q=80"
                     alt={`${activeConversation.name} profile`}
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="48px"
+                    className="object-cover"
+                    unoptimized
                   />
                 </div>
                 <div className="flex flex-col">
