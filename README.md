@@ -94,7 +94,7 @@ GEMINI_API_KEY=your_api_key_here
 ### 3. Run the App
 
 ```bash
-pnpm -C apps/web dev
+pnpm run dev
 ```
 
 The dev server defaults to `http://localhost:3000`. Contract tests can be executed from `contracts/` with `sui move test`, and the shared messaging SDK builds via `pnpm -C packages/sdk build`.
