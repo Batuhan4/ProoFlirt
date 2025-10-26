@@ -4,13 +4,35 @@
 
 :root {
   color-scheme: dark;
+  --color-bg-start: #16040f;
+  --color-bg-mid: #1f0a1c;
+  --color-bg-end: #2a1024;
+  --color-surface: rgba(39, 10, 26, 0.78);
+  --color-surface-strong: rgba(26, 5, 20, 0.92);
+  --color-surface-soft: rgba(248, 210, 221, 0.08);
+  --color-border-soft: rgba(255, 244, 246, 0.14);
+  --color-border: rgba(255, 120, 108, 0.32);
+  --color-border-strong: rgba(255, 68, 88, 0.58);
+  --color-text-primary: #fff3f5;
+  --color-text-secondary: rgba(255, 230, 235, 0.78);
+  --color-text-muted: rgba(255, 214, 222, 0.62);
+  --color-accent: #ff4458;
+  --color-accent-strong: #ff6a4a;
+  --color-secondary: #ff8b5f;
+  --color-highlight: #ffd27d;
+  --shadow-accent: 0 28px 58px rgba(255, 80, 92, 0.28);
 }
 
 html,
 body {
   min-height: 100%;
-  background-color: #0b0d1c;
-  color: white;
+  background: radial-gradient(125% 120% at 50% -12%, rgba(255, 118, 90, 0.25) 0%, rgba(22, 4, 15, 0.92) 42%),
+    linear-gradient(180deg, var(--color-bg-start) 0%, var(--color-bg-mid) 55%, var(--color-bg-end) 100%);
+  color: var(--color-text-primary);
+}
+
+body {
+  background-attachment: fixed;
 }
 
 a {

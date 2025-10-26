@@ -6,6 +6,8 @@ const DEFAULT_AGGREGATOR_URL =
   "https://aggregator.walrus-testnet.walrus.space";
 const DEFAULT_EPOCHS = Number(process.env.NEXT_PUBLIC_WALRUS_DEFAULT_EPOCHS || 5);
 const DEFAULT_PROXY_PATH = process.env.NEXT_PUBLIC_WALRUS_PROXY_PATH || "/api/walrus/upload";
+const WALRUS_SCHEME_PREFIX = /^walrus:/i;
+const WALRUS_PATH_PREFIX = /^v1\/blobs\//i;
 
 export interface WalrusUploadOptions {
   publisherUrl?: string;
@@ -52,6 +54,28 @@ export function resolveWalrusAggregatorUrl() {
 
 export function defaultWalrusEpochCount() {
   return DEFAULT_EPOCHS;
+}
+
+export function normalizeWalrusLink(link?: string | null): string | null {
+  if (!link) return null;
+  const trimmed = link.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed.includes("...") ? null : trimmed;
+  }
+
+  const aggregator = resolveWalrusAggregatorUrl();
+  const withoutScheme = trimmed.replace(WALRUS_SCHEME_PREFIX, "");
+  const cleaned = withoutScheme.replace(WALRUS_PATH_PREFIX, "");
+
+  if (!cleaned || cleaned.includes("...")) {
+    return null;
+  }
+
+  return `${aggregator}/v1/blobs/${cleaned}`;
 }
 
 export async function hashBlobSha256(

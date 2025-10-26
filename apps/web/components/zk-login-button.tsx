@@ -31,9 +31,9 @@ export function ZkLoginButton({ className }: Props) {
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-accent-pink to-accent-purple py-4 text-base font-semibold text-white shadow-lg shadow-accent-pink/30 transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-70"
+        className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-accent-strong)] py-4 text-base font-semibold text-white shadow-[var(--shadow-accent)] transition hover:opacity-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-70"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-lg font-bold">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/30 text-lg font-bold text-[var(--color-accent-strong)]">
           {loading ? "…" : "G"}
         </span>
         {loading ? "Preparing Google Login…" : "Continue with ZK Login"}

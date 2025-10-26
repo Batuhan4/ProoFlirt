@@ -9,21 +9,23 @@ const config: Config = {
     extend: {
       colors: {
         accent: {
-          pink: "#ff2d78",
-          purple: "#7f4bff"
+          coral: "#ff4458",
+          flame: "#ff6a4a"
         },
         neutral: {
-          900: "#0f1125",
-          800: "#151731",
-          100: "#e4e6ff",
-          400: "#9ca3c7"
+          900: "#16040f",
+          800: "#1f0a1c",
+          100: "#fff3f5",
+          400: "#f1c1c9"
         }
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"]
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        heading: ["var(--font-heading)", "var(--font-inter)", "system-ui", "sans-serif"]
       },
       backgroundImage: {
-        "hero-gradient": "radial-gradient(120% 120% at 50% 0%, rgba(127, 75, 255, 0.35) 0%, rgba(15, 17, 37, 0.9) 45%, #0b0d1c 100%)"
+        "hero-gradient":
+          "radial-gradient(130% 150% at 45% -30%, rgba(255, 118, 90, 0.35) 0%, rgba(19, 4, 14, 0.9) 46%), linear-gradient(185deg, #16040f 0%, #1f0a1c 52%, #2a1024 100%)"
       }
     }
   },
