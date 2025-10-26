@@ -1,6 +1,30 @@
+'use client';
+
 import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import type { KeyboardEvent } from "react";
+
+const MESSAGES_ENABLED = process.env.NEXT_PUBLIC_MESSAGES_ENABLE === "true";
+const REQUIRED_MESSAGING_ENV = {
+  NEXT_PUBLIC_MESSAGE_PACKAGE: process.env.NEXT_PUBLIC_MESSAGE_PACKAGE,
+  NEXT_PUBLIC_MESSAGE_REGISTRY_ID: process.env.NEXT_PUBLIC_MESSAGE_REGISTRY_ID,
+  NEXT_PUBLIC_MESSAGE_REGISTRY_VERSION: process.env.NEXT_PUBLIC_MESSAGE_REGISTRY_VERSION
+} as const;
+
+if (MESSAGES_ENABLED) {
+  const missingEnv = Object.entries(REQUIRED_MESSAGING_ENV)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+  if (missingEnv.length > 0) {
+    throw new Error(
+      `Encrypted DMs are enabled, but messaging contract env vars are missing: ${missingEnv.join(
+        ", "
+      )}. Configure them in your environment.`
+    );
+  }
+}
 
 type Conversation = {
   id: string;
@@ -27,6 +51,11 @@ type SessionInfo = {
   refreshedAt: string;
   expiresIn: string;
   note: string;
+};
+
+type ConversationThread = Conversation & {
+  session: SessionInfo;
+  messages: MessageBubble[];
 };
 
 type NavKey = "swipe" | "profile" | "messages" | "meetups" | "edit";
@@ -76,15 +105,55 @@ const NavIcon: Record<Exclude<NavKey, "edit">, (className?: string) => JSX.Eleme
   )
 };
 
-const conversations: Conversation[] = [
+const INITIAL_THREADS: ConversationThread[] = [
   {
     id: "ash-berlin",
     name: "Ash",
     handle: "@ash.zk",
     trustScore: 91,
-    lastMessage: "Sent zk-location lock for the Lisbon meetup plan.",
-    timestamp: "2m ago",
-    walrusProofCid: "walrus:5ab2...ash"
+    lastMessage: "Sending now. I have a snapshot showing +12 confirmations after the weekend brunch.",
+    timestamp: "10:47",
+    walrusProofCid: "walrus:5ab2...ash",
+    session: {
+      id: "session:0x5fd...ff1",
+      refreshedAt: "9m ago",
+      expiresIn: "19h",
+      note: "Session rotates when either party requests a new zk channel."
+    },
+    messages: [
+      {
+        id: "msg-1",
+        author: "partner",
+        content:
+          "Hey Nova! Locked tomorrow 10:00 for the cowork sprint. I minted a Walrus stub so we can cache offline.",
+        time: "10:42",
+        status: "zk-verified",
+        attachmentCid: "walrus:meeting:stub"
+      },
+      {
+        id: "msg-2",
+        author: "self",
+        content:
+          "Perfect! I will request a zk-location proof when I arrive. Want me to pre-order snacks from the DAO pantry?",
+        time: "10:44",
+        status: "delivered"
+      },
+      {
+        id: "msg-3",
+        author: "partner",
+        content:
+          "Yes please. Also, can you share the latest trust score deltas? Thinking of a quick warm-up exercise.",
+        time: "10:45",
+        status: "sent"
+      },
+      {
+        id: "msg-4",
+        author: "self",
+        content: "Sending now. I have a snapshot showing +12 confirmations after the weekend brunch.",
+        time: "10:47",
+        status: "zk-verified"
+      }
+    ]
   },
   {
     id: "mira-singapore",
@@ -94,7 +163,29 @@ const conversations: Conversation[] = [
     lastMessage: "Queued a trust boost for your community care session.",
     timestamp: "1h ago",
     unreadCount: 2,
-    walrusProofCid: "walrus:1c9f...mira"
+    walrusProofCid: "walrus:1c9f...mira",
+    session: {
+      id: "session:0x9ab...mira",
+      refreshedAt: "1h ago",
+      expiresIn: "6h",
+      note: "Awaiting Mira's proof refresh to unlock attachments."
+    },
+    messages: [
+      {
+        id: "mira-msg-1",
+        author: "partner",
+        content: "Trust uplink queued. Rotate when you are ready so we can sync the new attestations.",
+        time: "09:32",
+        status: "sent"
+      },
+      {
+        id: "mira-msg-2",
+        author: "self",
+        content: "Copy. I'll nudge the validator set after stand-up and share the metrics bundle.",
+        time: "09:36",
+        status: "delivered"
+      }
+    ]
   },
   {
     id: "leo-nyc",
@@ -103,54 +194,25 @@ const conversations: Conversation[] = [
     trustScore: 82,
     lastMessage: "Shared governance deck – take a look when free.",
     timestamp: "Yesterday",
-    walrusProofCid: "walrus:7e3b...leo"
+    walrusProofCid: "walrus:7e3b...leo",
+    session: {
+      id: "session:0x41c...leo",
+      refreshedAt: "Yesterday",
+      expiresIn: "3d",
+      note: "Low-traffic channel. Rotate when governance cadence resumes."
+    },
+    messages: [
+      {
+        id: "leo-msg-1",
+        author: "partner",
+        content: "I dropped the governance deck plus notes. Let me know if anything needs redacting.",
+        time: "14:12",
+        status: "sent",
+        attachmentCid: "walrus:deck:v3"
+      }
+    ]
   }
 ];
-
-const activeConversation = {
-  ...conversations[0],
-  session: {
-    id: "session:0x5fd...ff1",
-    refreshedAt: "9m ago",
-    expiresIn: "19h",
-    note: "Session rotates when either party requests a new zk channel."
-  } satisfies SessionInfo,
-  messages: [
-    {
-      id: "msg-1",
-      author: "partner",
-      content:
-        "Hey Nova! Locked tomorrow 10:00 for the cowork sprint. I minted a Walrus stub so we can cache offline.",
-      time: "10:42",
-      status: "zk-verified",
-      attachmentCid: "walrus:meeting:stub"
-    },
-    {
-      id: "msg-2",
-      author: "self",
-      content:
-        "Perfect! I will request a zk-location proof when I arrive. Want me to pre-order snacks from the DAO pantry?",
-      time: "10:44",
-      status: "delivered"
-    },
-    {
-      id: "msg-3",
-      author: "partner",
-      content:
-        "Yes please. Also, can you share the latest trust score deltas? Thinking of a quick warm-up exercise.",
-      time: "10:45",
-      status: "sent"
-    },
-    {
-      id: "msg-4",
-      author: "self",
-      content:
-        "Sending now. I have a snapshot showing +12 confirmations after the weekend brunch.",
-      time: "10:47",
-      status: "zk-verified"
-    }
-  ] satisfies MessageBubble[]
-};
 
 const filters = ["All", "Trusted", "Pending proof", "Ghost check"];
 
@@ -161,6 +223,89 @@ const statusCopy: Record<NonNullable<MessageBubble["status"]>, string> = {
 };
 
 export default function MessagesPage() {
+  const [threads, setThreads] = useState<ConversationThread[]>(() => INITIAL_THREADS);
+  const [activeConversationId, setActiveConversationId] = useState<string>(
+    () => INITIAL_THREADS[0]?.id ?? ""
+  );
+  const [draftMessage, setDraftMessage] = useState("");
+
+  const activeThread =
+    threads.find((thread) => thread.id === activeConversationId) ?? threads[0] ?? null;
+  const canSend = draftMessage.trim().length > 0;
+
+  const handleSelectConversation = (conversationId: string) => {
+    setActiveConversationId(conversationId);
+    setDraftMessage("");
+    setThreads((prev) =>
+      prev.map((thread) =>
+        thread.id === conversationId ? { ...thread, unreadCount: undefined } : thread
+      )
+    );
+  };
+
+  const handleSend = () => {
+    const trimmed = draftMessage.trim();
+    if (!trimmed || !activeThread) {
+      return;
+    }
+
+    const now = new Date();
+    const newMessage: MessageBubble = {
+      id: `local-${now.getTime()}`,
+      author: "self",
+      content: trimmed,
+      time: formatTimeLabel(now),
+      status: "sent"
+    };
+
+    setThreads((prev) =>
+      prev.map((thread) =>
+        thread.id === activeThread.id
+          ? {
+              ...thread,
+              messages: [...thread.messages, newMessage],
+              lastMessage: trimmed,
+              timestamp: formatTimestampSummary(now),
+              unreadCount: undefined
+            }
+          : thread
+      )
+    );
+    setDraftMessage("");
+  };
+
+  const handleDraftKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      if (canSend) {
+        handleSend();
+      }
+    }
+  };
+
+  if (!MESSAGES_ENABLED) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#080312] via-[#0e0424] to-[#120535] px-6 py-16 text-center text-white">
+        <h1 className="text-2xl font-semibold">Private messages are almost ready</h1>
+        <p className="max-w-xl text-sm text-white/70">
+          Encrypted DMs roll out gradually. Set <code className="rounded bg-white/10 px-1 py-0.5 text-xs">NEXT_PUBLIC_MESSAGES_ENABLE=true</code> in your environment once your wallet is allow-listed.
+        </p>
+      </main>
+    );
+  }
+
+  if (!activeThread) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-b from-[#080312] via-[#0e0424] to-[#120535] px-6 py-16 text-center text-white">
+        <h1 className="text-2xl font-semibold">No conversations yet</h1>
+        <p className="max-w-md text-sm text-white/70">
+          You are allow-listed for DMs, but there are no threads to display. Start a new chat from a
+          profile to seed this inbox.
+        </p>
+      </main>
+    );
+  }
+
   const navItems = NAV_ITEMS.map((item) =>
     item.key === "messages" ? { ...item, active: true } : item
   );
@@ -273,41 +418,46 @@ export default function MessagesPage() {
               </div>
 
               <div className="space-y-3">
-                {conversations.map((conversation) => (
-                  <button
-                    key={conversation.id}
-                    type="button"
-                    className={clsx(
-                      "flex w-full flex-col gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] p-3 text-left transition hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]",
-                      conversation.id === activeConversation.id
-                        ? "border-[var(--color-border-strong)] bg-[var(--color-surface-strong)]"
-                        : ""
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--color-text-primary)]">{conversation.name}</p>
-                        <p className="text-xs text-[var(--color-text-muted)]">{conversation.handle}</p>
+                {threads.map((conversation) => {
+                  const isActive = conversation.id === activeThread.id;
+                  return (
+                    <button
+                      key={conversation.id}
+                      type="button"
+                      onClick={() => handleSelectConversation(conversation.id)}
+                      className={clsx(
+                        "flex w-full flex-col gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] p-3 text-left transition hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]",
+                        isActive && "border-[var(--color-border-strong)] bg-[var(--color-surface-strong)]"
+                      )}
+                      aria-pressed={isActive}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                            {conversation.name}
+                          </p>
+                          <p className="text-xs text-[var(--color-text-muted)]">{conversation.handle}</p>
+                        </div>
+                        <span className="rounded-full bg-[var(--color-accent)]/25 px-2 py-1 text-xs font-medium text-[var(--color-text-primary)]">
+                          {conversation.trustScore}
+                        </span>
                       </div>
-                      <span className="rounded-full bg-[var(--color-accent)]/25 px-2 py-1 text-xs font-medium text-[var(--color-text-primary)]">
-                        {conversation.trustScore}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--color-text-muted)]">{conversation.lastMessage}</p>
-                    <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)]">
-                      <span>{conversation.timestamp}</span>
-                      <div className="flex items-center gap-1 font-mono">
-                        <ShieldIcon className="h-3 w-3 text-[var(--color-text-secondary)]" />
-                        {conversation.walrusProofCid}
+                      <p className="text-xs text-[var(--color-text-muted)]">{conversation.lastMessage}</p>
+                      <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)]">
+                        <span>{conversation.timestamp}</span>
+                        <div className="flex items-center gap-1 font-mono">
+                          <ShieldIcon className="h-3 w-3 text-[var(--color-text-secondary)]" />
+                          {conversation.walrusProofCid}
+                        </div>
                       </div>
-                    </div>
-                    {conversation.unreadCount ? (
-                      <span className="self-end rounded-full bg-[var(--color-accent)] px-2 py-1 text-[11px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-accent)]">
-                        {conversation.unreadCount} new
-                      </span>
-                    ) : null}
-                  </button>
-                ))}
+                      {conversation.unreadCount ? (
+                        <span className="self-end rounded-full bg-[var(--color-accent)] px-2 py-1 text-[11px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-accent)]">
+                          {conversation.unreadCount} new
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
             </aside>
 
@@ -316,7 +466,7 @@ export default function MessagesPage() {
                 <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-[var(--color-border-soft)]">
                   <Image
                     src="https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=300&q=80"
-                    alt={`${activeConversation.name} profile`}
+                    alt={`${activeThread.name} profile`}
                     fill
                     sizes="48px"
                     className="object-cover"
@@ -325,25 +475,25 @@ export default function MessagesPage() {
                 </div>
                 <div className="flex flex-col">
                   <p className="text-base font-heading font-semibold text-[var(--color-text-primary)]">
-                    {activeConversation.name}
+                    {activeThread.name}
                   </p>
                   <p className="text-xs text-[var(--color-text-muted)]">
-                    {activeConversation.handle} · Trust {activeConversation.trustScore}
+                    {activeThread.handle} · Trust {activeThread.trustScore}
                   </p>
                 </div>
                 <span className="ml-auto rounded-full border border-[var(--color-border-soft)] px-3 py-1 text-xs text-[var(--color-text-muted)]">
-                  Session {activeConversation.session.id}
+                  Session {activeThread.session.id}
                 </span>
               </header>
 
               <div className="rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] p-3 text-xs text-[var(--color-text-muted)]">
-                <p>Channel refreshed {activeConversation.session.refreshedAt}</p>
-                <p>Auto-rotates in {activeConversation.session.expiresIn}</p>
-                <p className="pt-1 text-[var(--color-text-secondary)]">{activeConversation.session.note}</p>
+                <p>Channel refreshed {activeThread.session.refreshedAt}</p>
+                <p>Auto-rotates in {activeThread.session.expiresIn}</p>
+                <p className="pt-1 text-[var(--color-text-secondary)]">{activeThread.session.note}</p>
               </div>
 
               <div className="flex flex-1 flex-col gap-3">
-                {activeConversation.messages.map((message) => (
+                {activeThread.messages.map((message) => (
                   <div
                     key={message.id}
                     className={clsx(
@@ -389,18 +539,21 @@ export default function MessagesPage() {
                     rows={3}
                     className="w-full resize-none rounded-xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/70"
                     placeholder="Write an encrypted hello…"
-                    disabled
+                    value={draftMessage}
+                    onChange={(event) => setDraftMessage(event.target.value)}
+                    onKeyDown={handleDraftKeyDown}
                   />
                   <button
                     type="button"
                     className="whitespace-nowrap rounded-full bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-accent)] transition hover:bg-[var(--color-accent-strong)]"
-                    disabled
+                    onClick={handleSend}
+                    disabled={!canSend}
                   >
                     Send · ZK lock
                   </button>
                 </div>
                 <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-                  Messaging disabled in mock mode. Real channels will require refreshed proofs before sending.
+                  Messages stay local in prototype mode. Production will route through encrypted channels before persisting on-chain.
                 </p>
               </div>
             </article>
@@ -445,6 +598,22 @@ export default function MessagesPage() {
       </nav>
     </div>
   );
+}
+
+function formatTimeLabel(date: Date): string {
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatTimestampSummary(date: Date): string {
+  const diff = Date.now() - date.getTime();
+  if (diff < 60_000) {
+    return "Just now";
+  }
+  if (diff < 3_600_000) {
+    const minutes = Math.floor(diff / 60_000);
+    return `${minutes}m ago`;
+  }
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function ShieldIcon({ className }: { className?: string }) {
