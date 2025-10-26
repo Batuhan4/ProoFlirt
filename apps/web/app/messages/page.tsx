@@ -73,7 +73,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "swipe", label: "Swipe", href: "/discover" },
   { key: "profile", label: "Profile", href: "/profile" },
   { key: "messages", label: "DMs", href: "/messages" },
-  { key: "meetups", label: "Meetups", href: "#", disabled: true },
+  { key: "meetups", label: "Meetups", href: "/meetups" },
   {
     key: "edit",
     label: "Edit profile",
