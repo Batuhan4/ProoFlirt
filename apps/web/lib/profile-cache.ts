@@ -7,6 +7,16 @@ export interface CachedMediaItem {
   fileHash?: string;
 }
 
+export interface CachedPhotoAnalysis {
+  verdict: "human" | "ai" | "uncertain" | "not_person";
+  humanConfidence: number;
+  aiConfidence?: number;
+  summary?: string;
+  flags?: string[];
+  rawText?: string;
+  analyzedAt?: number;
+}
+
 export interface CachedProfilePayload {
   address?: string;
   displayName: string;
@@ -19,6 +29,7 @@ export interface CachedProfilePayload {
   trustScore?: number;
   compatibilityScore?: number;
   updatedAt: number;
+  photoAnalysis?: CachedPhotoAnalysis | null;
 }
 
 function isBrowser() {

@@ -9,6 +9,11 @@ export type ProfileScoreSignals = {
   media?: ProfileScoreMedia[] | null;
   walrusLinks?: Array<string | null | undefined> | null;
   updatedAt?: number | null;
+  photoAnalysis?: {
+    verdict?: "human" | "ai" | "uncertain" | "not_person" | (string & {});
+    humanConfidence?: number | null | undefined;
+    aiConfidence?: number | null | undefined;
+  } | null;
 };
 
 const clampScore = (value: number) => {
@@ -25,6 +30,23 @@ export function computeProfileScores(signals: ProfileScoreSignals = {}) {
   const interests = signals.interests ?? [];
   const walrusLinks = signals.walrusLinks ?? [];
   const trimmedBio = (signals.bio ?? "").trim();
+  const analysisVerdict = signals.photoAnalysis?.verdict ?? null;
+
+  const normalizedHumanConfidence = (() => {
+    const value = signals.photoAnalysis?.humanConfidence;
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return null;
+    }
+    return Math.min(1, Math.max(0, value));
+  })();
+
+  const normalizedAiConfidence = (() => {
+    const value = signals.photoAnalysis?.aiConfidence;
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return null;
+    }
+    return Math.min(1, Math.max(0, value));
+  })();
 
   const mediaCount = media.length;
   const verifiedMediaCount = media.filter((item) => Boolean(item?.walrusLink)).length;
@@ -57,6 +79,27 @@ export function computeProfileScores(signals: ProfileScoreSignals = {}) {
   }
   if (recencyDays !== null) {
     trustScore += Math.max(0, 10 - Math.min(recencyDays, 10));
+  }
+  if (normalizedHumanConfidence !== null) {
+    if (normalizedHumanConfidence >= 0.85) {
+      trustScore += 14;
+    } else if (normalizedHumanConfidence >= 0.65) {
+      trustScore += 8;
+    } else if (normalizedHumanConfidence >= 0.45) {
+      trustScore += 3;
+    } else if (normalizedHumanConfidence >= 0.25) {
+      trustScore -= 6;
+    } else {
+      trustScore -= 14;
+    }
+  }
+  if (analysisVerdict === "ai" || analysisVerdict === "not_person") {
+    trustScore -= 12;
+  } else if (analysisVerdict === "uncertain") {
+    trustScore -= 4;
+  }
+  if (normalizedAiConfidence !== null && normalizedAiConfidence >= 0.7) {
+    trustScore -= Math.min(16, Math.round(normalizedAiConfidence * 18));
   }
 
   let compatibilityScore = 44;

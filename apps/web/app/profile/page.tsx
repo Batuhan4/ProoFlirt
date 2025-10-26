@@ -229,7 +229,8 @@ export default function ProfilePage() {
       interests: cachedProfile.interests,
       media: mediaItems,
       walrusLinks: cachedProfile.walrusLinks ?? mediaItems.map((item) => item.walrusLink),
-      updatedAt: cachedProfile.updatedAt
+      updatedAt: cachedProfile.updatedAt,
+      photoAnalysis: cachedProfile.photoAnalysis
     });
   }, [cachedProfile]);
 

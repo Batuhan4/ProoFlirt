@@ -13,6 +13,10 @@ import { loadSession, type ZkLoginSession } from "@/lib/zklogin/storage";
 import { saveCachedProfile } from "@/lib/profile-cache";
 import { computeProfileScores } from "@/lib/profile-scoring";
 import {
+  analyzeProfilePhoto,
+  type PhotoAnalysisVerdict
+} from "@/lib/ai-photo-analysis";
+import {
   defaultWalrusEpochCount,
   hashBlobSha256,
   resolveWalrusAggregatorUrl,
@@ -96,6 +100,48 @@ function deriveHandle(name: string, address?: string) {
   return "@you";
 }
 
+function formatAnalysisVerdict(verdict: PhotoAnalysisVerdict["verdict"]) {
+  switch (verdict) {
+    case "human":
+      return "Looks human";
+    case "ai":
+      return "Likely AI-generated";
+    case "not_person":
+      return "Not a person";
+    default:
+      return "Needs review";
+  }
+}
+
+function verdictAccentClasses(verdict: PhotoAnalysisVerdict["verdict"]) {
+  switch (verdict) {
+    case "human":
+      return "bg-[rgba(76,201,160,0.18)] text-[#7cf8b8]";
+    case "ai":
+      return "bg-[rgba(255,139,95,0.2)] text-[#ffb38e]";
+    case "not_person":
+      return "bg-[rgba(255,210,125,0.22)] text-[#ffd27d]";
+    default:
+      return "bg-[rgba(132,143,255,0.24)] text-[#c6cbff]";
+  }
+}
+
+function formatTrustDelta(delta: number) {
+  if (delta === 0) return "+0 points";
+  const prefix = delta > 0 ? "+" : "-";
+  return `${prefix}${Math.abs(delta)} point${Math.abs(delta) === 1 ? "" : "s"}`;
+}
+
+function deltaAccentClasses(delta: number) {
+  if (delta > 0) {
+    return "bg-[rgba(76,201,160,0.18)] text-[#7cf8b8]";
+  }
+  if (delta < 0) {
+    return "bg-[rgba(255,139,95,0.2)] text-[#ffb38e]";
+  }
+  return "bg-[rgba(132,143,255,0.24)] text-[#c6cbff]";
+}
+
 export default function CreateProfilePage() {
   const router = useRouter();
   const [session, setSession] = useState<ZkLoginSession | null>(null);
@@ -106,6 +152,8 @@ export default function CreateProfilePage() {
   );
   const [primaryMedia, setPrimaryMedia] = useState<LocalMedia | null>(null);
   const [galleryMedia, setGalleryMedia] = useState<LocalMedia[]>([]);
+  const [photoAnalysis, setPhotoAnalysis] = useState<PhotoAnalysisVerdict | null>(null);
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessState, setShowSuccessState] = useState(false);
@@ -113,6 +161,9 @@ export default function CreateProfilePage() {
   const [recentWalrusLinks, setRecentWalrusLinks] = useState<string[]>([]);
   const [txDigest, setTxDigest] = useState<string | null>(null);
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [analysisDelta, setAnalysisDelta] = useState<number | null>(null);
+  const [showAnalysisToast, setShowAnalysisToast] = useState(false);
+  const analysisToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setSession(loadSession());
@@ -122,6 +173,9 @@ export default function CreateProfilePage() {
     () => () => {
       if (redirectTimerRef.current) {
         clearTimeout(redirectTimerRef.current);
+      }
+      if (analysisToastTimerRef.current) {
+        clearTimeout(analysisToastTimerRef.current);
       }
       if (primaryMedia?.preview) {
         URL.revokeObjectURL(primaryMedia.preview);
@@ -143,11 +197,16 @@ export default function CreateProfilePage() {
   }, [bio, displayName, galleryMedia.length, primaryMedia, selectedInterests.length, showSuccessState]);
 
   const phaseMessage = useMemo(() => {
-    if (phase === "uploading") return "Encrypting and uploading media to Walrus…";
+    if (phase === "uploading") {
+      if (isAnalyzingPhoto) {
+        return "Reviewing your photo with Gemini…";
+      }
+      return "Encrypting and uploading media to Walrus…";
+    }
     if (phase === "signing") return "Submitting your profile to Sui…";
     if (phase === "success") return "Profile finalized on-chain. Redirecting…";
     return null;
-  }, [phase]);
+  }, [isAnalyzingPhoto, phase]);
 
   const handleBack = () => {
     router.back();
@@ -171,6 +230,13 @@ export default function CreateProfilePage() {
         URL.revokeObjectURL(primaryMedia.preview);
       }
       setPrimaryMedia(createPreview(file));
+      setPhotoAnalysis(null);
+      setAnalysisDelta(null);
+      setShowAnalysisToast(false);
+      if (analysisToastTimerRef.current) {
+        clearTimeout(analysisToastTimerRef.current);
+        analysisToastTimerRef.current = null;
+      }
       setErrorMessage(null);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Invalid file selected.");
@@ -209,6 +275,22 @@ export default function CreateProfilePage() {
       }
       return next;
     });
+  };
+
+  const removePrimaryMedia = () => {
+    setPrimaryMedia((prev) => {
+      if (prev?.preview) {
+        URL.revokeObjectURL(prev.preview);
+      }
+      return null;
+    });
+    setPhotoAnalysis(null);
+    setAnalysisDelta(null);
+    setShowAnalysisToast(false);
+    if (analysisToastTimerRef.current) {
+      clearTimeout(analysisToastTimerRef.current);
+      analysisToastTimerRef.current = null;
+    }
   };
 
   const toggleInterest = (interest: InterestOption) => {
@@ -260,6 +342,26 @@ export default function CreateProfilePage() {
 
       const trimmedDisplayName = displayName.trim();
       const trimmedBio = bio.trim();
+      let analysis: PhotoAnalysisVerdict | null = null;
+      setIsAnalyzingPhoto(true);
+      try {
+        analysis = await analyzeProfilePhoto(primary.file);
+        setPhotoAnalysis(analysis);
+        setErrorMessage(null);
+      } catch (analysisError) {
+        console.warn("Gemini photo analysis unavailable. Continuing without AI trust boost.", analysisError);
+        setPhotoAnalysis(null);
+        setAnalysisDelta(null);
+        setShowAnalysisToast(false);
+        if (analysisToastTimerRef.current) {
+          clearTimeout(analysisToastTimerRef.current);
+          analysisToastTimerRef.current = null;
+        }
+        setErrorMessage("Gemini AI reviewer is unavailable right now. Continuing without that trust signal.");
+      } finally {
+        setIsAnalyzingPhoto(false);
+      }
+
       const uploadedMedia = await uploadMedia([primary, ...gallery]);
       const serializedMedia = uploadedMedia.map((item) => ({
         blobId: item.blobId,
@@ -268,13 +370,36 @@ export default function CreateProfilePage() {
         fileHash: bytesToHex(item.fileHash)
       }));
       const cacheTimestamp = Date.now();
-      const profileScores = computeProfileScores({
+      const baseSignals = {
         bio: trimmedBio,
         interests: selectedInterests,
         media: serializedMedia,
         walrusLinks: serializedMedia.map((item) => item.walrusLink),
         updatedAt: cacheTimestamp
+      } as const;
+      const baselineScores = computeProfileScores(baseSignals);
+      const profileScores = computeProfileScores({
+        ...baseSignals,
+        photoAnalysis: analysis
+          ? {
+              verdict: analysis.verdict,
+              humanConfidence: analysis.humanConfidence,
+              aiConfidence: analysis.aiConfidence
+          }
+          : undefined
       });
+      if (analysis) {
+        const delta = profileScores.trustScore - baselineScores.trustScore;
+        setAnalysisDelta(delta);
+        setShowAnalysisToast(true);
+        if (analysisToastTimerRef.current) {
+          clearTimeout(analysisToastTimerRef.current);
+        }
+        analysisToastTimerRef.current = setTimeout(() => {
+          setShowAnalysisToast(false);
+          analysisToastTimerRef.current = null;
+        }, 4200);
+      }
       const [primaryRecord, ...galleryRecords] = uploadedMedia;
       setPhase("signing");
 
@@ -323,7 +448,18 @@ export default function CreateProfilePage() {
         walrusLinks: serializedMedia.map((item) => item.walrusLink),
         trustScore: profileScores.trustScore,
         compatibilityScore: profileScores.compatibilityScore,
-        updatedAt: cacheTimestamp
+        updatedAt: cacheTimestamp,
+        photoAnalysis: analysis
+          ? {
+              verdict: analysis.verdict,
+              humanConfidence: analysis.humanConfidence,
+              aiConfidence: analysis.aiConfidence,
+              summary: analysis.summary,
+              flags: analysis.flags,
+              rawText: analysis.rawText,
+              analyzedAt: cacheTimestamp
+            }
+          : null
       });
 
       setRecentWalrusLinks(serializedMedia.map((item) => item.walrusLink));
@@ -384,6 +520,39 @@ export default function CreateProfilePage() {
 
   return (
     <main className="relative min-h-screen bg-gradient-to-b from-[var(--color-bg-start)] via-[var(--color-bg-mid)] to-[var(--color-bg-end)] text-[var(--color-text-primary)]">
+      {showAnalysisToast && analysisDelta !== null && (
+        <div className="pointer-events-none fixed inset-x-0 top-4 z-50 flex justify-center px-4">
+          <div
+            className={`pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-[0_12px_30px_rgba(0,0,0,0.25)] ${deltaAccentClasses(analysisDelta)}`}
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              {analysisDelta >= 0 ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4 4L19 7" />
+              ) : (
+                <>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12" />
+                </>
+              )}
+            </svg>
+            <span>
+              {analysisDelta > 0
+                ? "Gemini boosted your trust score"
+                : analysisDelta < 0
+                  ? "Gemini lowered your trust score"
+                  : "Gemini reviewed your trust score"}{" "}
+              ({formatTrustDelta(analysisDelta)})
+            </span>
+          </div>
+        </div>
+      )}
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-36 pt-8 sm:max-w-4xl sm:px-10">
         <header className="flex flex-col gap-6">
           <button
@@ -506,6 +675,52 @@ export default function CreateProfilePage() {
                 />
               </label>
 
+              {(isAnalyzingPhoto || photoAnalysis) && (
+                <div className="rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-text-secondary)]">
+                  {isAnalyzingPhoto ? (
+                    <div className="flex items-center gap-3">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-accent)]" />
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        Gemini is reviewing your photo for authenticity signals…
+                      </p>
+                    </div>
+                  ) : photoAnalysis ? (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                            {formatAnalysisVerdict(photoAnalysis.verdict)}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                            {photoAnalysis.summary?.trim() ||
+                              "Inference complete. Trust score updated with this signal."}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <span
+                            className={`flex h-8 min-w-[4rem] items-center justify-center rounded-full px-3 text-xs font-semibold ${verdictAccentClasses(photoAnalysis.verdict)}`}
+                          >
+                            {Math.round(photoAnalysis.humanConfidence * 100)}% human
+                          </span>
+                          {analysisDelta !== null && (
+                            <span
+                              className={`flex h-8 min-w-[4rem] items-center justify-center rounded-full px-3 text-xs font-semibold ${deltaAccentClasses(analysisDelta)}`}
+                            >
+                              Trust {formatTrustDelta(analysisDelta)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {photoAnalysis.flags && photoAnalysis.flags.length > 0 && (
+                        <p className="text-xs text-[var(--color-text-secondary)]">
+                          Flags: {photoAnalysis.flags.join(", ")}
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="flex h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] text-sm text-[var(--color-text-secondary)] transition hover:border-[var(--color-border)] hover:text-[var(--color-text-primary)]">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-surface)]">
@@ -559,7 +774,7 @@ export default function CreateProfilePage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => primaryMedia && setPrimaryMedia(null)}
+                    onClick={removePrimaryMedia}
                     className="mt-4 w-fit text-xs font-semibold text-[var(--color-accent)] hover:text-white"
                     disabled={!primaryMedia}
                   >

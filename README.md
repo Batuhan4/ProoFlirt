@@ -11,7 +11,7 @@ ProoFlirt is a revolutionary decentralized dating protocol built on the **Sui ne
 *   📸 **Decentralized Media Storage:** Your profile photos and videos are stored off-chain on **Walrus**, a decentralized storage solution. Your media is secure and tamper-proof.
 *   💯 **Trust Score:** A dynamic trust metric derived from user interactions and community feedback. This helps to build a safe and respectful community.
 *   📍 **Location Verification:** Prove your attendance at real-world meetups using QR codes or device-based verification. No more "they didn't show up" debates.
-*   🤖 **AI Profile Moderation:** Our AI validates uploaded profile photos to prevent fake or inappropriate images, ensuring a safe browsing experience for everyone.
+*   🤖 **AI Profile Moderation:** Google Gemini reviews uploaded profile photos with a trust-focused prompt to block fake or irrelevant images before they ever reach the chain.
 *   🤫 **ZK-Encrypted Messaging:** Enjoy fully encrypted, peer-to-peer messaging. Your conversations are secured by ZK authentication and are readable only by you and your match.
 *   🚨 **Fake Report System:** A community-driven system to report and verify fake accounts or spam. Confirmed violations have real consequences.
 *   💸 **Economic Layer:**
@@ -45,7 +45,22 @@ ProoFlirt is a revolutionary decentralized dating protocol built on the **Sui ne
 
 ## 🏁 Getting Started
 
-*Instructions on how to set up and run the project will be added here soon!*
+Create an `.env.local` file inside `apps/web/` (Next.js loads secrets from the app root) or configure the same variables in your hosting provider:
+
+```bash
+GEMINI_API_KEY=your_api_key_here
+# Optional overrides:
+# GEMINI_ANALYSIS_MODEL=gemini-2.5-flash
+# GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+# NEXT_PUBLIC_GEMINI_ANALYSIS_PATH=/api/gemini/analyze
+```
+
+The web app runs with:
+
+```bash
+pnpm install
+pnpm dev
+```
 
 ## 🤝 Contributing
 

@@ -4,5 +4,6 @@ packages:
   - contracts
 
 onlyBuiltDependencies:
+  - esbuild
   - sharp
   - unrs-resolver
