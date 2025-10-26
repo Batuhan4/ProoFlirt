@@ -18,6 +18,8 @@ fun test_create_profile_stores_expected_fields() {
         &mut registry,
         b"Alice".to_string(),
         b"Privacy-forward dating".to_string(),
+        b"Female".to_string(),
+        b"Any".to_string(),
         vector[
             b"Web3".to_string(),
             b"ZK Proofs".to_string(),
@@ -42,7 +44,8 @@ fun test_create_profile_stores_expected_fields() {
     assert!(*profile::profile_display_name(&profile_obj) == b"Alice".to_string(), 4);
     assert!(profile::profile_version(&profile_obj) == 1, 5);
 
-    profile::testing_destroy_profile(profile_obj);
+    profile::testing_destroy_profile(&mut registry, profile_obj);
+    profile::testing_remove_registry_entry(&mut registry, ALICE);
     profile::testing_destroy_registry(registry);
     scenario.end();
 }
@@ -53,10 +56,12 @@ fun test_duplicate_profile_abort() {
     let mut scenario = test_scenario::begin(ALICE);
     let mut registry = profile::testing_new_registry(scenario.ctx());
 
-    let first_profile = profile::testing_create_profile(
+    let _first_profile = profile::testing_create_profile(
         &mut registry,
         b"Alice".to_string(),
         b"First profile".to_string(),
+        b"Female".to_string(),
+        b"Any".to_string(),
         vector[b"Move".to_string()],
         vector[1u8],
         vector[2u8],
@@ -67,12 +72,12 @@ fun test_duplicate_profile_abort() {
         ALICE,
         scenario.ctx(),
     );
-    profile::testing_destroy_profile(first_profile);
-
-    let duplicate_profile = profile::testing_create_profile(
+    let _duplicate_profile = profile::testing_create_profile(
         &mut registry,
         b"Alice".to_string(),
         b"Duplicate".to_string(),
+        b"Female".to_string(),
+        b"Any".to_string(),
         vector[b"Move".to_string()],
         vector[1u8],
         vector[2u8],
@@ -83,7 +88,6 @@ fun test_duplicate_profile_abort() {
         ALICE,
         scenario.ctx(),
     );
-    profile::testing_destroy_profile(duplicate_profile);
 
     abort
 }
@@ -98,6 +102,8 @@ fun test_update_persona_wrong_sender() {
         &mut registry,
         b"Alice".to_string(),
         b"Legit user".to_string(),
+        b"Female".to_string(),
+        b"Any".to_string(),
         vector[b"ZK".to_string()],
         vector[0u8],
         vector[1u8],
@@ -109,12 +115,15 @@ fun test_update_persona_wrong_sender() {
         scenario.ctx(),
     );
 
+    profile::testing_remove_registry_entry(&mut registry, ALICE);
     profile::testing_destroy_registry(registry);
     scenario.next_tx(BOB);
     profile::testing_update_persona(
         &mut profile_obj,
         b"Malicious".to_string(),
         b"I hacked this profile".to_string(),
+        b"Female".to_string(),
+        b"Any".to_string(),
         vector[b"Hacking".to_string()],
         scenario.ctx(),
         BOB,
@@ -134,6 +143,8 @@ fun test_update_scores_requires_admin() {
         &mut registry,
         b"Alice".to_string(),
         b"Legit user".to_string(),
+        b"Female".to_string(),
+        b"Any".to_string(),
         vector[b"ZK".to_string()],
         vector[0u8],
         vector[1u8],

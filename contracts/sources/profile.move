@@ -613,9 +613,19 @@ module prooflirt::profile {
     }
 
     #[test_only]
+    public fun testing_remove_registry_entry(
+        registry: &mut ProfileRegistry,
+        owner: address,
+    ) {
+        if (sui::table::contains(&registry.profiles, owner)) {
+            let _ = sui::table::remove(&mut registry.profiles, owner);
+        };
+    }
+
+    #[test_only]
     public fun testing_destroy_registry(registry: ProfileRegistry) {
         let ProfileRegistry { id, profiles } = registry;
-        sui::table::destroy_empty(profiles);
+        sui::table::drop(profiles);
         sui::object::delete(id);
     }
 
@@ -626,10 +636,13 @@ module prooflirt::profile {
     }
 
     #[test_only]
-    public fun testing_destroy_profile(profile: Profile) {
+    public fun testing_destroy_profile(
+        registry: &mut ProfileRegistry,
+        profile: Profile,
+    ) {
         let Profile {
             id,
-            owner: _,
+            owner,
             display_name: _,
             bio: _,
             gender: _,
@@ -644,6 +657,7 @@ module prooflirt::profile {
             version: _,
             last_updated_epoch: _,
         } = profile;
+        let _ = sui::table::remove(&mut registry.profiles, owner);
         sui::object::delete(id);
     }
 }

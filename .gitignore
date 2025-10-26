@@ -5,6 +5,7 @@ node_modules/
 .next/
 out/
 dist/
+tsconfig.tsbuildinfo
 contracts/build/
 
 # Env files
@@ -22,3 +23,8 @@ Sui-Move-Book.md
 walrus-integration.md
 gemini-api-docs.md
 sui-zk-messaging.md
+AGENTS.md
+Prooflirt.md
+hype.md
+plan.md
+techstack.md
