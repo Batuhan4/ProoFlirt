@@ -17,12 +17,7 @@ type SwipeProfile = {
   image: string;
 };
 
-type SwipeAction = {
-  id: "pass" | "verify" | "connect";
-  label: string;
-  description: string;
-  accent: string;
-};
+type SwipeAction = "pass" | "connect" | "superlike";
 
 const SWIPE_PROFILES: SwipeProfile[] = [
   {
@@ -66,27 +61,6 @@ const SWIPE_PROFILES: SwipeProfile[] = [
     walrusLink: "https://aggregator.walrus.xyz/v1/blobs/1c9f...mira",
     image:
       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80"
-  }
-];
-
-const ACTIONS: SwipeAction[] = [
-  {
-    id: "pass",
-    label: "Pass",
-    description: "Slide to next profile",
-    accent: "hover:border-white/40 hover:text-white"
-  },
-  {
-    id: "verify",
-    label: "Trust Boost",
-    description: "Request updated ZK proof",
-    accent: "hover:border-[#10b981] hover:text-[#10b981]"
-  },
-  {
-    id: "connect",
-    label: "Connect",
-    description: "Send a private hello",
-    accent: "hover:border-[#ff2d78] hover:text-[#ff2d78]"
   }
 ];
 
@@ -159,10 +133,10 @@ const STACK_DEPTH = 2;
 
 export default function DiscoverPage() {
   const [index, setIndex] = useState(0);
-  const [lastAction, setLastAction] = useState<SwipeAction["id"] | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
+  const [lastAction, setLastAction] = useState<SwipeAction | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartX = useRef(0);
+  const dragStart = useRef({ x: 0, y: 0 });
 
   const stack = useMemo(() => {
     const items: SwipeProfile[] = [];
@@ -174,59 +148,64 @@ export default function DiscoverPage() {
 
   const activeProfile = stack[0];
 
-  const handleAction = (action: SwipeAction["id"]) => {
+  const handleAction = (action: SwipeAction) => {
     setLastAction(action);
     setIndex((prev) => (prev + 1) % SWIPE_PROFILES.length);
-    setDragOffset(0);
+    setDragOffset({ x: 0, y: 0 });
     setIsDragging(false);
     window.setTimeout(() => setLastAction(null), 800);
   };
 
   const handlePointerDown = (event: PointerEvent) => {
     if (isDragging) return;
-    dragStartX.current = event.clientX;
+    dragStart.current = { x: event.clientX, y: event.clientY };
     setIsDragging(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: PointerEvent) => {
     if (!isDragging) return;
-    const deltaX = event.clientX - dragStartX.current;
-    setDragOffset(deltaX);
+    const deltaX = event.clientX - dragStart.current.x;
+    const deltaY = event.clientY - dragStart.current.y;
+    setDragOffset({ x: deltaX, y: deltaY });
   };
 
   const handlePointerEnd = (event: PointerEvent) => {
     if (!isDragging) return;
     event.currentTarget.releasePointerCapture(event.pointerId);
-    const delta = event.clientX - dragStartX.current;
-    const swipeThreshold = 80;
-    if (Math.abs(delta) > swipeThreshold) {
-      handleAction(delta > 0 ? "connect" : "pass");
+    const deltaX = event.clientX - dragStart.current.x;
+    const deltaY = event.clientY - dragStart.current.y;
+    const horizontalThreshold = 80;
+    const verticalThreshold = 100;
+    if (deltaY < -verticalThreshold && Math.abs(deltaY) > Math.abs(deltaX)) {
+      handleAction("superlike");
+    } else if (Math.abs(deltaX) > horizontalThreshold) {
+      handleAction(deltaX > 0 ? "connect" : "pass");
     } else {
-      setDragOffset(0);
+      setDragOffset({ x: 0, y: 0 });
       setIsDragging(false);
     }
-    dragStartX.current = 0;
+    dragStart.current = { x: 0, y: 0 };
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-[#070f21] to-[#0b0f1d] text-white">
-      <header className="sticky top-0 z-20 border-b border-white/5 bg-[#070f21]/95 px-4 pb-4 pt-6 backdrop-blur">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-[var(--color-bg-start)] via-[var(--color-bg-mid)] to-[var(--color-bg-end)] text-[var(--color-text-primary)]">
+      <header className="sticky top-0 z-20 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)] px-4 pb-4 pt-6 backdrop-blur">
         <div className="mx-auto flex w-full max-w-md items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-accent-pink shadow-inner shadow-black/40">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-surface)] text-[var(--color-accent)] shadow-[var(--shadow-accent)]">
               <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
                 <path d="M12.1 20.7a1 1 0 0 1-.2 0c-.4-.1-.7-.3-1-.5C6.1 16.2 3 12.2 3 8.7 3 6 5 4 7.6 4c1.4 0 2.7.6 3.6 1.7C12.1 4.6 13.4 4 14.8 4 17.4 4 19.4 6 19.4 8.7c0 3.5-3.1 7.5-7.9 11.5-.3.3-.6.5-1 .5h-.4z" />
               </svg>
             </span>
             <div>
-              <p className="text-base font-semibold">ProoFlirt</p>
-              <p className="text-xs text-white/60">Private PWA swipe</p>
+              <p className="text-base font-heading font-semibold text-[var(--color-text-primary)]">ProoFlirt</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Private PWA swipe</p>
             </div>
           </div>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:border-white/40 hover:text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border-soft)] text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
             aria-label="Filters"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -234,7 +213,6 @@ export default function DiscoverPage() {
             </svg>
           </button>
         </div>
-
       </header>
 
       <main className="flex flex-1 justify-center px-4 pb-28 pt-4 sm:px-6">
@@ -246,15 +224,16 @@ export default function DiscoverPage() {
               .map((profile, stackIndex) => {
                 const visualIndex = STACK_DEPTH - stackIndex;
                 const isActiveCard = visualIndex === 0;
+                const hasDrag = dragOffset.x !== 0 || dragOffset.y !== 0;
                 const dragTransform =
-                  isActiveCard && (isDragging || dragOffset !== 0)
-                    ? ` translateX(${dragOffset}px) rotate(${dragOffset * 0.05}deg)`
+                  isActiveCard && (isDragging || hasDrag)
+                    ? ` translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${dragOffset.x * 0.05}deg)`
                     : "";
                 return (
                   <article
                     key={`${profile.id}-${visualIndex}`}
                     className={clsx(
-                      "absolute inset-0 flex flex-col justify-end overflow-hidden rounded-[32px] border border-white/10 bg-black shadow-2xl transition-transform duration-300 will-change-transform touch-pan-y",
+                      "absolute inset-0 flex flex-col justify-end overflow-hidden rounded-[32px] border border-[var(--color-border-soft)] bg-[var(--color-surface-strong)] shadow-[var(--shadow-accent)] transition-transform duration-300 will-change-transform touch-pan-y",
                       isActiveCard ? "z-20" : "",
                       isActiveCard && isDragging && "!duration-0"
                     )}
@@ -272,26 +251,28 @@ export default function DiscoverPage() {
                     <div
                       className="absolute inset-0 bg-cover bg-center"
                       style={{
-                        backgroundImage: `linear-gradient(180deg, rgba(1, 4, 12, 0) 0%, rgba(1, 4, 12, 0.8) 70%), url(${profile.image})`
+                        backgroundImage: `linear-gradient(180deg, rgba(22, 4, 15, 0) 0%, rgba(22, 4, 15, 0.92) 72%), url(${profile.image})`
                       }}
                     />
                     <div className="relative z-10 flex flex-col gap-4 p-5">
-                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-white/80">
-                        <span className="rounded-full bg-white/15 px-3 py-1">
+                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
+                        <span className="rounded-full bg-[var(--color-surface-soft)] px-3 py-1">
                           {(profile.matchScore * 100).toFixed(0)}% Match
                         </span>
-                        <span className="text-white/70">{profile.distance}</span>
+                        <span className="text-[var(--color-text-muted)]">{profile.distance}</span>
                       </div>
                       <div>
-                        <p className="text-3xl font-semibold">{profile.name}</p>
-                        <p className="text-lg text-white/70">{profile.age}</p>
+                        <p className="text-3xl font-heading font-semibold text-[var(--color-text-primary)]">
+                          {profile.name}
+                        </p>
+                        <p className="text-lg text-[var(--color-text-muted)]">{profile.age}</p>
                       </div>
-                      <p className="text-sm leading-relaxed text-white/80">{profile.about}</p>
+                      <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{profile.about}</p>
                       <div className="flex flex-wrap gap-2">
                         {profile.tags.map((tag) => (
                           <span
                             key={`${profile.id}-${tag}`}
-                            className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-medium"
+                            className="rounded-full border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
                           >
                             #{tag}
                           </span>
@@ -303,74 +284,77 @@ export default function DiscoverPage() {
               })}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            {ACTIONS.map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                onClick={() => handleAction(action.id)}
-                className={clsx(
-                  "flex flex-col gap-1 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm font-medium text-white/80 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
-                  action.accent
-                )}
-              >
-                <span>{action.label}</span>
-                <span className="text-xs text-white/60">{action.description}</span>
-              </button>
-            ))}
+          <div className="flex flex-col gap-3 rounded-[28px] border border-[var(--color-border-soft)] bg-[var(--color-surface)]/80 p-5 text-sm text-[var(--color-text-secondary)]">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              Swipe controls
+            </p>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between rounded-2xl bg-[var(--color-surface-soft)] px-3 py-2">
+                <span className="font-medium text-[var(--color-text-primary)]">Swipe right</span>
+                <span className="text-xs uppercase tracking-wide text-[var(--color-accent)]">Connect</span>
+              </div>
+              <div className="flex items-center justify-between rounded-2xl bg-[var(--color-surface-soft)] px-3 py-2">
+                <span className="font-medium text-[var(--color-text-primary)]">Swipe left</span>
+                <span className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Pass</span>
+              </div>
+              <div className="flex items-center justify-between rounded-2xl bg-[var(--color-surface-soft)] px-3 py-2">
+                <span className="font-medium text-[var(--color-text-primary)]">Swipe up</span>
+                <span className="text-xs uppercase tracking-wide text-[var(--color-highlight)]">Super like</span>
+              </div>
+            </div>
           </div>
           {lastAction && (
-            <p className="text-center text-xs text-white/70">
+            <p className="text-center text-xs text-[var(--color-text-muted)]">
               {lastAction === "connect" && "Connection request prepared with encrypted messaging."}
               {lastAction === "pass" && "Skipping to the next verified profile."}
-              {lastAction === "verify" && "Requesting a fresh proof from Walrus + Sui."}
+              {lastAction === "superlike" && "Super like sent—front of the queue for this match."}
             </p>
           )}
 
-          <div className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5">
-            <div className="flex items-center justify-between text-xs text-white/60">
+          <div className="flex flex-col gap-4 rounded-[28px] border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-5">
+            <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
               <div>
-                <p className="uppercase tracking-wide text-white/50">Walrus Blob</p>
-                <p className="font-mono text-sm text-white">{activeProfile.walrusLink}</p>
+                <p className="uppercase tracking-wide text-[var(--color-text-secondary)]">Walrus Blob</p>
+                <p className="font-mono text-sm text-[var(--color-text-primary)]">{activeProfile.walrusLink}</p>
               </div>
-              <span className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/70">
+              <span className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-text-primary)]">
                 zk protected
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-white/10 bg-[#0c1528] p-4">
-                <p className="text-xs text-white/60">Trust Score</p>
-                <p className="text-3xl font-semibold text-white">{activeProfile.trustScore}</p>
-                <p className="text-xs text-white/50">DAO signals</p>
+              <div className="rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] p-4">
+                <p className="text-xs text-[var(--color-text-muted)]">Trust Score</p>
+                <p className="text-3xl font-semibold text-[var(--color-text-primary)]">{activeProfile.trustScore}</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">DAO signals</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-[#0f1a33] p-4">
-                <p className="text-xs text-white/60">Compatibility</p>
-                <p className="text-3xl font-semibold text-white">
+              <div className="rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] p-4">
+                <p className="text-xs text-[var(--color-text-muted)]">Compatibility</p>
+                <p className="text-3xl font-semibold text-[var(--color-text-primary)]">
                   {(activeProfile.matchScore * 100).toFixed(0)}%
                 </p>
-                <p className="text-xs text-white/50">Shared rituals</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">Shared rituals</p>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#101626] p-4 text-sm text-white/70">
-              <p className="mb-2 text-white">Next actions</p>
+            <div className="rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] p-4 text-sm text-[var(--color-text-secondary)]">
+              <p className="mb-2 text-[var(--color-text-primary)]">Next actions</p>
               <ul className="space-y-2 text-xs">
                 <li className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-[#10b981]" /> Request ZK location proof
+                  <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" /> Request ZK location proof
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-[#f59e0b]" /> Share meetup itinerary
+                  <span className="h-2 w-2 rounded-full bg-[var(--color-highlight)]" /> Share meetup itinerary
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-[#ef4444]" /> Flag suspicious behavior
+                  <span className="h-2 w-2 rounded-full bg-[var(--color-border-strong)]" /> Flag suspicious behavior
                 </li>
               </ul>
             </div>
 
             <Link
               href="/"
-              className="rounded-2xl border border-white/20 px-4 py-3 text-center text-sm font-semibold text-white/80 transition hover:border-white/40 hover:text-white"
+              className="rounded-2xl border border-[var(--color-border)] px-4 py-3 text-center text-sm font-semibold text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
             >
               Return home
             </Link>
@@ -378,7 +362,7 @@ export default function DiscoverPage() {
         </section>
       </main>
 
-      <nav className="sticky bottom-0 z-20 border-t border-white/10 bg-[#050914]/95 px-4 py-3 backdrop-blur md:hidden">
+      <nav className="sticky bottom-0 z-20 border-t border-[var(--color-border-soft)] bg-[var(--color-surface)] px-4 py-3 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-between">
           {BOTTOM_NAV.filter((item) => item.key !== "edit").map((item) => {
             const Icon = NavIcon[item.key as Exclude<NavKey, "edit">];
@@ -389,16 +373,18 @@ export default function DiscoverPage() {
                 aria-disabled={item.disabled}
                 className={clsx(
                   "flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium transition",
-                  item.active ? "bg-white/10 text-white" : "text-white/60 hover:text-white",
-                  item.disabled && "!cursor-not-allowed text-white/30 hover:text-white/30"
+                  item.active
+                    ? "bg-[var(--color-surface-soft)] text-[var(--color-text-primary)]"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
+                  item.disabled && "!cursor-not-allowed text-[var(--color-text-muted)]/70 hover:text-[var(--color-text-muted)]/70"
                 )}
               >
                 {Icon && (
                   <Icon
                     className={clsx(
                       "h-5 w-5",
-                      item.active ? "text-white" : "text-white/70",
-                      item.disabled && "!text-white/30"
+                      item.active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]",
+                      item.disabled && "!text-[var(--color-text-muted)]/70"
                     )}
                   />
                 )}

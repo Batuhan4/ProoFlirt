@@ -1,11 +1,6 @@
 {
-  "name": "Prooflirt",
-  "short_name": "Prooflirt",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0b0d1c",
-  "theme_color": "#ff2d78",
-  "description": "Private Dating, Verified Humans.",
+  "name": "ProoFlirt",
+  "short_name": "ProoFlirt",
   "icons": [
     {
       "src": "/assets/android-chrome-192x192.png",
@@ -17,5 +12,8 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "theme_color": "#0b0d1c",
+  "background_color": "#0b0d1c",
+  "display": "standalone"
 }
