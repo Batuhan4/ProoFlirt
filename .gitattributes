@@ -1,0 +1,37 @@
+# ProoFlirt Git Attributes
+
+# Prevent env files from being accidentally added
+.env* filter=secret
+.env.local filter=secret
+
+# Exception for template file
+.env.example -filter
+
+# Mark sensitive file types
+*.key filter=secret
+*.pem filter=secret
+*.p12 filter=secret
+*.pfx filter=secret
+
+# Ensure consistent line endings
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.move text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

@@ -10,7 +10,23 @@ contracts/build/
 # Env files
 .env*
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 !.env.example
+
+# Secrets and keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*_rsa
+*_rsa.pub
+*.secret
+secrets/
+.secrets/
 
 # Misc
 .DS_Store
