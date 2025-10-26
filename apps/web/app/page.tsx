@@ -18,17 +18,15 @@ export default function HomePage() {
         <section className="flex flex-col items-center gap-12 text-center text-[var(--color-text-primary)]">
           <div className="flex w-full flex-col gap-10 rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-surface-strong)]/90 p-8 shadow-[var(--shadow-accent)] backdrop-blur-lg sm:p-12">
             <div className="flex flex-col items-center gap-6">
-              <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-                <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--color-surface)] shadow-[var(--shadow-accent)]">
-                  <Image
-                    src="/assets/ProoFlirt-logo.png"
-                    alt="ProoFlirt logo"
-                    width={80}
-                    height={80}
-                    className="h-16 w-16 object-contain sm:h-20 sm:w-20"
-                    priority
-                  />
-                </span>
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <Image
+                  src="/assets/ProoFlirt-logo.png"
+                  alt="ProoFlirt logo"
+                  width={120}
+                  height={120}
+                  className="h-20 w-20 object-contain sm:h-24 sm:w-24"
+                  priority
+                />
                 <span className="bg-gradient-to-r from-[var(--color-accent)] via-[var(--color-secondary)] to-[var(--color-highlight)] bg-clip-text text-4xl font-heading font-semibold tracking-tight text-transparent sm:text-5xl">
                   ProoFlirt
                 </span>

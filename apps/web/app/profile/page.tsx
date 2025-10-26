@@ -1,10 +1,12 @@
 'use client';
 
 import clsx from "clsx";
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { loadCachedProfile, type CachedProfilePayload } from "@/lib/profile-cache";
+import { computeProfileScores } from "@/lib/profile-scoring";
 import { normalizeWalrusLink } from "@/lib/walrus";
 
 type ProfileStat = {
@@ -212,6 +214,25 @@ const statusAccent: Record<ProofBadge["status"], string> = {
 export default function ProfilePage() {
   const [cachedProfile] = useState<CachedProfilePayload | null>(() => loadCachedProfile());
 
+  const profileScores = useMemo(() => {
+    if (!cachedProfile) {
+      return null;
+    }
+
+    const mediaItems = [
+      ...(cachedProfile.primary ? [cachedProfile.primary] : []),
+      ...(cachedProfile.gallery ?? [])
+    ];
+
+    return computeProfileScores({
+      bio: cachedProfile.bio,
+      interests: cachedProfile.interests,
+      media: mediaItems,
+      walrusLinks: cachedProfile.walrusLinks ?? mediaItems.map((item) => item.walrusLink),
+      updatedAt: cachedProfile.updatedAt
+    });
+  }, [cachedProfile]);
+
   const navItems = NAV_ITEMS.map((item) =>
     item.key === "profile" ? { ...item, active: true } : item
   );
@@ -225,6 +246,13 @@ export default function ProfilePage() {
 
     const trimmedBio = (cachedProfile.bio || "").trim();
     const relative = formatRelativeTime(cachedProfile.updatedAt);
+    const trustValue = profileScores?.trustScore ?? cachedProfile.trustScore;
+    const trustTrend = relative
+      ? `Synced ${relative}`
+      : typeof trustValue === "number"
+        ? `Trust score ${trustValue}`
+        : FALLBACK_PROFILE.trustTrend;
+
     return {
       ...FALLBACK_PROFILE,
       name: cachedProfile.displayName || FALLBACK_PROFILE.name,
@@ -237,10 +265,10 @@ export default function ProfilePage() {
           : FALLBACK_PROFILE.interests,
       walrusAggregator:
         cachedProfile.primary?.walrusLink ?? FALLBACK_PROFILE.walrusAggregator,
-      trustTrend: relative ? `Updated ${relative}` : FALLBACK_PROFILE.trustTrend,
+      trustTrend,
       lastOnline: relative ? `Active ${relative}` : FALLBACK_PROFILE.lastOnline
     };
-  }, [cachedProfile]);
+  }, [cachedProfile, profileScores]);
 
   const stats = useMemo<ProfileStat[]>(() => {
     if (!cachedProfile) {
@@ -270,8 +298,10 @@ export default function ProfilePage() {
       ];
     }
 
-    const compatibility = cachedProfile.compatibilityScore ?? 50;
-    const trustScore = cachedProfile.trustScore ?? 50;
+    const compatibility = Math.round(
+      profileScores?.compatibilityScore ?? cachedProfile.compatibilityScore ?? 50
+    );
+    const trustScore = Math.round(profileScores?.trustScore ?? cachedProfile.trustScore ?? 50);
     const relative = formatRelativeTime(cachedProfile.updatedAt);
     return [
       {
@@ -297,7 +327,7 @@ export default function ProfilePage() {
         sublabel: relative ? "Last cache update" : "Last identity challenge"
       }
     ];
-  }, [cachedProfile, profileData.trustTrend]);
+  }, [cachedProfile, profileData.trustTrend, profileScores]);
 
   const mediaGallery = useMemo<MediaItem[]>(() => {
     if (!cachedProfile) {
@@ -340,14 +370,17 @@ export default function ProfilePage() {
       <header className="sticky top-0 z-20 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)] px-4 pb-4 pt-6 backdrop-blur">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-surface-soft)] text-[var(--color-accent)] shadow-[var(--shadow-accent)]">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
-                <path d="M12.1 20.7a1 1 0 0 1-.2 0c-.4-.1-.7-.3-1-.5C6.1 16.2 3 12.2 3 8.7 3 6 5 4 7.6 4c1.4 0 2.7.6 3.6 1.7C12.1 4.6 13.4 4 14.8 4 17.4 4 19.4 6 19.4 8.7c0 3.5-3.1 7.5-7.9 11.5-.3.3-.6.5-1 .5h-.4z" />
-              </svg>
-            </span>
-            <div>
+            <Image
+              src="/assets/ProoFlirt-logo.png"
+              alt="ProoFlirt logo"
+              width={64}
+              height={64}
+              className="h-12 w-12 object-contain sm:h-14 sm:w-14"
+              priority
+            />
+            <div className="flex flex-col">
               <p className="text-base font-heading font-semibold text-[var(--color-text-primary)]">ProoFlirt</p>
-              <p className="text-xs text-[var(--color-text-muted)]">Identity locker overview</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Trust vault for zk dating</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

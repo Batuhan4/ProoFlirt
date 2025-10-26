@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from "clsx";
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useRef, useState, type PointerEvent } from "react";
 
@@ -147,6 +148,13 @@ export default function DiscoverPage() {
   }, [index]);
 
   const activeProfile = stack[0];
+  const desktopNav = useMemo(
+    () =>
+      TOP_NAV.filter((item) => !item.hideOnMobileNav).map((item) =>
+        item.key === "swipe" ? { ...item, active: true } : item
+      ),
+    []
+  );
 
   const handleAction = (action: SwipeAction) => {
     setLastAction(action);
@@ -191,27 +199,54 @@ export default function DiscoverPage() {
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-[var(--color-bg-start)] via-[var(--color-bg-mid)] to-[var(--color-bg-end)] text-[var(--color-text-primary)]">
       <header className="sticky top-0 z-20 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)] px-4 pb-4 pt-6 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-md items-center justify-between">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-surface)] text-[var(--color-accent)] shadow-[var(--shadow-accent)]">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
-                <path d="M12.1 20.7a1 1 0 0 1-.2 0c-.4-.1-.7-.3-1-.5C6.1 16.2 3 12.2 3 8.7 3 6 5 4 7.6 4c1.4 0 2.7.6 3.6 1.7C12.1 4.6 13.4 4 14.8 4 17.4 4 19.4 6 19.4 8.7c0 3.5-3.1 7.5-7.9 11.5-.3.3-.6.5-1 .5h-.4z" />
-              </svg>
-            </span>
-            <div>
+            <Image
+              src="/assets/ProoFlirt-logo.png"
+              alt="ProoFlirt logo"
+              width={64}
+              height={64}
+              className="h-12 w-12 object-contain sm:h-14 sm:w-14"
+              priority
+            />
+            <div className="flex flex-col">
               <p className="text-base font-heading font-semibold text-[var(--color-text-primary)]">ProoFlirt</p>
-              <p className="text-xs text-[var(--color-text-muted)]">Private PWA swipe</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Proof-first swipe journeys</p>
             </div>
           </div>
-          <button
-            type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border-soft)] text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
-            aria-label="Filters"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
-              <path strokeLinecap="round" d="M5 7h14M7 12h10M9 17h6" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            <nav className="hidden items-center gap-1 rounded-full border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] px-1 py-1 text-xs text-[var(--color-text-muted)] md:flex">
+              {desktopNav.map((item) => {
+                const Icon = item.key === "edit" ? null : NavIcon[item.key as Exclude<NavKey, "edit">];
+                return (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    aria-disabled={item.disabled}
+                    className={clsx(
+                      "flex items-center gap-2 rounded-full px-3 py-1.5 transition",
+                      item.active
+                        ? "bg-[var(--color-surface)] text-[var(--color-text-primary)]"
+                        : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]",
+                      item.disabled && "!cursor-not-allowed text-[var(--color-text-muted)]/70 hover:text-[var(--color-text-muted)]/70"
+                    )}
+                  >
+                    {Icon ? <Icon className="h-4 w-4" /> : null}
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border-soft)] text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
+              aria-label="Filters"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path strokeLinecap="round" d="M5 7h14M7 12h10M9 17h6" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 

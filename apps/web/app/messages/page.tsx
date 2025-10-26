@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import Image from "next/image";
 import Link from "next/link";
 
 type Conversation = {
@@ -170,15 +171,18 @@ export default function MessagesPage() {
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-[var(--color-bg-start)] via-[var(--color-bg-mid)] to-[var(--color-bg-end)] text-[var(--color-text-primary)]">
       <header className="sticky top-0 z-20 border-b border-[var(--color-border-soft)] bg-[var(--color-surface)] px-4 pb-4 pt-6 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-surface-soft)] text-[var(--color-accent)] shadow-[var(--shadow-accent)]">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
-                <path d="M12.1 20.7a1 1 0 0 1-.2 0c-.4-.1-.7-.3-1-.5C6.1 16.2 3 12.2 3 8.7 3 6 5 4 7.6 4c1.4 0 2.7.6 3.6 1.7C12.1 4.6 13.4 4 14.8 4 17.4 4 19.4 6 19.4 8.7c0 3.5-3.1 7.5-7.9 11.5-.3.3-.6.5-1 .5h-.4z" />
-              </svg>
-            </span>
-            <div>
+          <div className="flex items-center gap-4">
+            <Image
+              src="/assets/ProoFlirt-logo.png"
+              alt="ProoFlirt logo"
+              width={64}
+              height={64}
+              className="h-14 w-14 object-contain"
+              priority
+            />
+            <div className="flex flex-col">
               <p className="text-base font-heading font-semibold text-[var(--color-text-primary)]">ProoFlirt</p>
-              <p className="text-xs text-[var(--color-text-muted)]">Encrypted inbox</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Proof-locked private messages</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

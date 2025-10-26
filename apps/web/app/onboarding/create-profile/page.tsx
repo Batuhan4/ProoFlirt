@@ -11,6 +11,7 @@ import {
 import { executeZkLoginTransaction } from "@/lib/zklogin/execute";
 import { loadSession, type ZkLoginSession } from "@/lib/zklogin/storage";
 import { saveCachedProfile } from "@/lib/profile-cache";
+import { computeProfileScores } from "@/lib/profile-scoring";
 import {
   defaultWalrusEpochCount,
   hashBlobSha256,
@@ -266,6 +267,14 @@ export default function CreateProfilePage() {
         mimeType: item.mimeType,
         fileHash: bytesToHex(item.fileHash)
       }));
+      const cacheTimestamp = Date.now();
+      const profileScores = computeProfileScores({
+        bio: trimmedBio,
+        interests: selectedInterests,
+        media: serializedMedia,
+        walrusLinks: serializedMedia.map((item) => item.walrusLink),
+        updatedAt: cacheTimestamp
+      });
       const [primaryRecord, ...galleryRecords] = uploadedMedia;
       setPhase("signing");
 
@@ -284,8 +293,8 @@ export default function CreateProfilePage() {
         zkCommitment,
         primary: primaryRecord,
         gallery: galleryRecords,
-        compatibilityScore: 50,
-        trustScore: 50
+        compatibilityScore: profileScores.compatibilityScore,
+        trustScore: profileScores.trustScore
       });
 
       let digest: string | null = null;
@@ -312,9 +321,9 @@ export default function CreateProfilePage() {
         primary: cachedPrimary,
         gallery: cachedGallery,
         walrusLinks: serializedMedia.map((item) => item.walrusLink),
-        trustScore: 50,
-        compatibilityScore: 50,
-        updatedAt: Date.now()
+        trustScore: profileScores.trustScore,
+        compatibilityScore: profileScores.compatibilityScore,
+        updatedAt: cacheTimestamp
       });
 
       setRecentWalrusLinks(serializedMedia.map((item) => item.walrusLink));
