@@ -553,6 +553,7 @@ export default function DiscoverPage() {
   const [viewerProfile, setViewerProfile] = useState<CachedProfilePayload | null>(null);
   const [index, setIndex] = useState(0);
   const [lastAction, setLastAction] = useState<SwipeAction | null>(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -565,6 +566,17 @@ export default function DiscoverPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setViewerProfile(loadCachedProfile());
   }, []);
+
+  useEffect(() => {
+    if (showPremiumModal) {
+      const previous = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = previous;
+      };
+    }
+    return undefined;
+  }, [showPremiumModal]);
 
   const filteredProfiles = useMemo(() => {
     if (!hasViewerPersona) {
@@ -618,8 +630,18 @@ export default function DiscoverPage() {
     []
   );
 
+  const closePremiumModal = () => setShowPremiumModal(false);
+
   const handleAction = (action: SwipeAction) => {
     if (profileCount === 0) return;
+    if (action === "superlike") {
+      setShowPremiumModal(true);
+      setLastAction(null);
+      setIsDragging(false);
+      setDragOffset({ x: 0, y: 0 });
+      dragStart.current = { x: 0, y: 0 };
+      return;
+    }
     setLastAction(action);
     setIndex((prev) => (prev + 1) % profileCount);
     setDragOffset({ x: 0, y: 0 });
@@ -628,21 +650,21 @@ export default function DiscoverPage() {
   };
 
   const handlePointerDown = (event: PointerEvent) => {
-    if (isDragging) return;
+    if (showPremiumModal || isDragging) return;
     dragStart.current = { x: event.clientX, y: event.clientY };
     setIsDragging(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: PointerEvent) => {
-    if (!isDragging) return;
+    if (showPremiumModal || !isDragging) return;
     const deltaX = event.clientX - dragStart.current.x;
     const deltaY = event.clientY - dragStart.current.y;
     setDragOffset({ x: deltaX, y: deltaY });
   };
 
   const handlePointerEnd = (event: PointerEvent) => {
-    if (!isDragging) return;
+    if (showPremiumModal || !isDragging) return;
     event.currentTarget.releasePointerCapture(event.pointerId);
     const deltaX = event.clientX - dragStart.current.x;
     const deltaY = event.clientY - dragStart.current.y;
@@ -829,7 +851,7 @@ export default function DiscoverPage() {
             <p className="text-center text-xs text-[var(--color-text-muted)]">
               {lastAction === "connect" && "Connection request prepared with encrypted messaging."}
               {lastAction === "pass" && "Skipping to the next verified profile."}
-              {lastAction === "superlike" && "Super like sent—front of the queue for this match."}
+              {lastAction === "superlike" && "Super likes are a premium perk—upgrade to unlock them."}
             </p>
           )}
 
@@ -927,6 +949,81 @@ export default function DiscoverPage() {
           })}
         </div>
       </nav>
+      {showPremiumModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-12">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-hidden="true"
+            onClick={closePremiumModal}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="premium-upsell-title"
+            className="relative flex w-full max-w-md flex-col gap-5 rounded-[32px] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-8 text-center shadow-[var(--shadow-accent)]"
+          >
+            <button
+              type="button"
+              onClick={closePremiumModal}
+              className="absolute right-4 top-4 text-[var(--color-text-muted)] transition hover:text-[var(--color-text-primary)]"
+              aria-label="Close premium upsell"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12M6 18 18 6" />
+              </svg>
+            </button>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-surface-soft)] text-[var(--color-accent)] shadow-[0_18px_32px_rgba(255,68,88,0.25)]">
+              <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2 3.5 5 5 5 8a5 5 0 0 1-10 0c0-3 3-4.5 5-8Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 16a4 4 0 0 0 8 0" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.4em] text-[var(--color-text-muted)]">
+                Superlikes locked
+              </p>
+              <h2 id="premium-upsell-title" className="text-2xl font-heading font-semibold text-[var(--color-text-primary)]">
+                Go Premium for daily super likes
+              </h2>
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                Unlock <span className="font-semibold text-[var(--color-text-primary)]">5 superlikes every day</span>,
+                priority queueing, and trust-forward intros for just{" "}
+                <span className="font-semibold text-[var(--color-text-primary)]">$5/month</span>.
+              </p>
+            </div>
+            <ul className="space-y-2 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-surface-soft)] px-4 py-3 text-left text-xs text-[var(--color-text-secondary)]">
+              <li className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
+                Daily refresh of 5 premium superlikes to stand out instantly
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[var(--color-highlight)]" />
+                Spotlight placement in discovery for zk-trusted matches
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[var(--color-border-strong)]" />
+                Bonus trust delta when premium matches reply within 24h
+              </li>
+            </ul>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                className="rounded-full bg-[var(--color-accent)] px-6 py-2 text-sm font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-accent)] transition hover:bg-[var(--color-accent-strong)]"
+                onClick={closePremiumModal}
+              >
+                Upgrade for $5/month
+              </button>
+              <button
+                type="button"
+                className="text-xs font-semibold text-[var(--color-text-muted)] transition hover:text-[var(--color-text-secondary)]"
+                onClick={closePremiumModal}
+              >
+                Maybe later
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

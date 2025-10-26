@@ -4,7 +4,24 @@ import withPWA from "next-pwa";
 const isDev = process.env.NODE_ENV === "development";
 
 const baseConfig: NextConfig = {
-  reactStrictMode: true
+  reactStrictMode: true,
+  transpilePackages: ["@prooflirt/sdk"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com"
+      },
+      {
+        protocol: "https",
+        hostname: "aggregator.walrus.xyz"
+      },
+      {
+        protocol: "https",
+        hostname: "aggregator.walrus-testnet.walrus.space"
+      }
+    ]
+  }
 };
 
 const withPWAFn = withPWA({
