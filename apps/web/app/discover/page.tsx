@@ -284,25 +284,6 @@ export default function DiscoverPage() {
               })}
           </div>
 
-          <div className="flex flex-col gap-3 rounded-[28px] border border-[var(--color-border-soft)] bg-[var(--color-surface)]/80 p-5 text-sm text-[var(--color-text-secondary)]">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
-              Swipe controls
-            </p>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between rounded-2xl bg-[var(--color-surface-soft)] px-3 py-2">
-                <span className="font-medium text-[var(--color-text-primary)]">Swipe right</span>
-                <span className="text-xs uppercase tracking-wide text-[var(--color-accent)]">Connect</span>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl bg-[var(--color-surface-soft)] px-3 py-2">
-                <span className="font-medium text-[var(--color-text-primary)]">Swipe left</span>
-                <span className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Pass</span>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl bg-[var(--color-surface-soft)] px-3 py-2">
-                <span className="font-medium text-[var(--color-text-primary)]">Swipe up</span>
-                <span className="text-xs uppercase tracking-wide text-[var(--color-highlight)]">Super like</span>
-              </div>
-            </div>
-          </div>
           {lastAction && (
             <p className="text-center text-xs text-[var(--color-text-muted)]">
               {lastAction === "connect" && "Connection request prepared with encrypted messaging."}
@@ -315,7 +296,9 @@ export default function DiscoverPage() {
             <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
               <div>
                 <p className="uppercase tracking-wide text-[var(--color-text-secondary)]">Walrus Blob</p>
-                <p className="font-mono text-sm text-[var(--color-text-primary)]">{activeProfile.walrusLink}</p>
+                <p className="font-mono text-sm text-[var(--color-text-primary)] break-all">
+                  {activeProfile.walrusLink}
+                </p>
               </div>
               <span className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-text-primary)]">
                 zk protected
